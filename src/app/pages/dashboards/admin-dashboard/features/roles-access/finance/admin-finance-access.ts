@@ -62,6 +62,14 @@ export class AdminFinanceAccess {
   private readonly brouillon = signal<Set<FinancePermission>>(new Set());
   readonly enregistrementEnCours = signal(false);
 
+  /** Même principe que roles-access.ts (côté agence) : les 4 sections s'affichent en
+   * onglets (mobile first) plutôt qu'empilées. */
+  readonly sectionActive = signal<1 | 2 | 3 | 4>(1);
+
+  setSectionActive(section: 1 | 2 | 3 | 4): void {
+    this.sectionActive.set(section);
+  }
+
   constructor() {
     effect(() => saveFilters(FILTERS_KEY, { recherche: this.recherche() }));
     this.charger();
@@ -97,6 +105,7 @@ export class AdminFinanceAccess {
     if (this.modifie()) return;
     this.selectionId.set(u.idUtilisateur);
     this.brouillon.set(new Set(u.financePermissions));
+    this.sectionActive.set(1);
   }
 
   initiales(identifiants: string): string {

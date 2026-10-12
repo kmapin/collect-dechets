@@ -64,7 +64,20 @@
         Lecture seule — permission « roles.manage » requise pour modifier.
       </p>
 
-      <div class="detail-section" *ngFor="let groupe of groupesDroitsAdministration">
+      <!-- Groupes de droits affichés en onglets (mobile first) plutôt qu'empilés. -->
+      <nav class="detail-tabs" role="tablist" aria-label="Catégories de permissions">
+        <button
+          type="button"
+          role="tab"
+          *ngFor="let groupe of groupesDroitsAdministration; let i = index"
+          class="detail-tabs__btn"
+          [class.active]="sectionActiveIndex() === i"
+          [attr.aria-selected]="sectionActiveIndex() === i"
+          (click)="setSectionActiveIndex(i)"
+        >{{ groupe.titre }}</button>
+      </nav>
+
+      <div class="detail-section" *ngFor="let groupe of groupesDroitsAdministration; let i = index" [hidden]="sectionActiveIndex() !== i">
         <h4>{{ groupe.titre }}</h4>
         <div class="detail-table-scroll">
           <table class="detail-table">

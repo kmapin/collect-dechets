@@ -76,7 +76,16 @@
 
       <!-- ═══════════════ Section Finance (déplacée depuis financial-dashboard) ═══════════════ -->
       <ng-container *ngIf="accesFinanceDisponible() && u.finance as uf">
-        <div class="detail-section">
+        <!-- Sections affichées en onglets (mobile first) plutôt qu'empilées — même
+             contenu, juste une seule section visible à la fois. -->
+        <nav class="detail-tabs" role="tablist" aria-label="Sections des droits financiers">
+          <button type="button" role="tab" class="detail-tabs__btn" [class.active]="sectionActive() === 1" [attr.aria-selected]="sectionActive() === 1" (click)="setSectionActive(1)">1. Rôle attribué</button>
+          <button type="button" role="tab" class="detail-tabs__btn" [class.active]="sectionActive() === 2" [attr.aria-selected]="sectionActive() === 2" (click)="setSectionActive(2)">2. Accès au module</button>
+          <button type="button" role="tab" class="detail-tabs__btn" [class.active]="sectionActive() === 3" [attr.aria-selected]="sectionActive() === 3" (click)="setSectionActive(3)">3. Onglets</button>
+          <button type="button" role="tab" class="detail-tabs__btn" [class.active]="sectionActive() === 4" [attr.aria-selected]="sectionActive() === 4" (click)="setSectionActive(4)">4. Droits détaillés</button>
+        </nav>
+
+        <div class="detail-section" *ngIf="sectionActive() === 1">
           <h4>1. Rôle attribué</h4>
           <p class="detail-section__hint">Changer de rôle réinitialise les droits détaillés ci-dessous sur le modèle du nouveau rôle.</p>
           <div class="detail-table-scroll">
@@ -119,7 +128,7 @@
           </div>
         </div>
 
-        <div class="detail-section">
+        <div class="detail-section" *ngIf="sectionActive() === 2">
           <h4>2. Accès au module financier</h4>
           <p class="detail-section__hint">
             Interrupteur général : décoché, l'utilisateur perd l'accès à tout le module
@@ -152,7 +161,7 @@
           </div>
         </div>
 
-        <div class="detail-section">
+        <div class="detail-section" *ngIf="sectionActive() === 3">
           <h4>3. Accès aux onglets</h4>
           <p class="detail-section__hint">Onglets du tableau de bord financier visibles pour cet utilisateur.</p>
           <p class="detail-section__hint detail-section__hint--warning" *ngIf="!uf.droitsFinance">
@@ -188,7 +197,7 @@
           </div>
         </div>
 
-        <div class="detail-section">
+        <div class="detail-section" *ngIf="sectionActive() === 4">
           <h4>4. Droits financiers détaillés</h4>
           <p class="detail-section__hint">Actions autorisées au-delà de la simple consultation d'un onglet.</p>
           <p class="detail-section__hint detail-section__hint--warning" *ngIf="!uf.droitsFinance">

@@ -275,6 +275,44 @@
   color: var(--surface-800, #1e293b);
 }
 
+// Onglets des 4 sections (Rôle attribué / Accès au module / Onglets / Droits détaillés) —
+// mobile first : rangée scrollable horizontalement plutôt que des sections empilées qui
+// rendaient la page très longue à faire défiler sur petit écran.
+.detail-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0.75rem 0 1rem;
+  padding-bottom: 0.3rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--surface-200, #e2e8f0);
+
+  &__btn {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.85rem;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: var(--surface-500, #64748b);
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: var(--surface-50, #f9fafb);
+      color: var(--surface-800, #1e293b);
+    }
+
+    &.active {
+      background: var(--primary-color, #2563eb);
+      color: #fff;
+    }
+  }
+}
+
 .detail-section {
   border-top: 1px solid var(--surface-100, #f1f5f9);
   padding-top: 1rem;

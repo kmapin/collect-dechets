@@ -98,6 +98,17 @@ export class RolesAccess {
   private readonly brouillonFinance = signal<Set<FinancePermission>>(new Set());
   readonly enregistrementFinanceEnCours = signal(false);
 
+  /** Les 4 sections (Rôle attribué / Accès au module / Onglets / Droits détaillés)
+   * s'affichent désormais en onglets plutôt qu'empilées (mobile first — la page devenait
+   * très longue à faire défiler sur petit écran). Remise à 1 à chaque changement
+   * d'utilisateur sélectionné, pour ne pas laisser un onglet avancé ouvert sur une
+   * personne qui vient d'être choisie. */
+  readonly sectionActive = signal<1 | 2 | 3 | 4>(1);
+
+  setSectionActive(section: 1 | 2 | 3 | 4): void {
+    this.sectionActive.set(section);
+  }
+
   constructor() {
     effect(() => saveFilters(FILTERS_KEY, { recherche: this.recherche(), filtreRole: this.filtreRole() }));
     this.charger();
@@ -136,6 +147,7 @@ export class RolesAccess {
     if (this.modifieFinance()) return;
     this.selectionId.set(u.idUtilisateur);
     this.brouillonFinance.set(new Set(u.finance?.permissions ?? []));
+    this.sectionActive.set(1);
   }
 
   initiales(identifiants: string): string {

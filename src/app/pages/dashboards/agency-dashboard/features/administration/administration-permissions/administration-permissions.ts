@@ -60,6 +60,15 @@ export class AdministrationPermissions {
   private readonly brouillon = signal<Set<AdministrationPermission>>(new Set());
   readonly enregistrementEnCours = signal(false);
 
+  /** Même principe que roles-access.ts : les groupes de droits (Employés / Gouvernance)
+   * s'affichent en onglets (mobile first) plutôt qu'empilés. Index plutôt que des valeurs
+   * fixes 1/2/3/4 ici, le nombre de groupes pouvant évoluer (GROUPES_DROITS_ADMINISTRATION). */
+  readonly sectionActiveIndex = signal(0);
+
+  setSectionActiveIndex(index: number): void {
+    this.sectionActiveIndex.set(index);
+  }
+
   // Calculé une fois à la construction (snapshot du token courant) — après l'affectation
   // des propriétés de paramètres du constructeur, jamais en initialiseur de champ (piège
   // déjà rencontré/corrigé dans employees-list.ts et roles-access.ts).
@@ -105,6 +114,7 @@ export class AdministrationPermissions {
     if (this.modifie()) return;
     this.selectionId.set(u.idUtilisateur);
     this.brouillon.set(new Set(u.permissions as AdministrationPermission[]));
+    this.sectionActiveIndex.set(0);
   }
 
   initiales(identifiants: string): string {
