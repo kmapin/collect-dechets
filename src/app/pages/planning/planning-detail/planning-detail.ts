@@ -625,12 +625,30 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
         this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'en_cours', startedAt: res.data?.startedAt ?? prev.startedAt } : prev);
         if (this.planning()) this._buildActivities(this.planning()!);
         this.msg.add({ severity: 'info', summary: 'Démarré', detail: `Planning "${p.reference}" en cours` });
+        this._signalerClientsExclus(res.data?.skipped);
         this.isActioning.set(false);
       },
       error: (err) => {
         this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.error?.message ?? 'Impossible de démarrer' });
         this.isActioning.set(false);
       },
+    });
+  }
+
+  /** Rend visible ce qui jusqu'ici ne vivait que dans les logs serveur (voir
+   * planning._skippedSummary, services/planning.js::startPlanning) : des clients du
+   * planning peuvent être exclus de la génération de Collecte sans que l'agence le sache
+   * — couverture de zone non confirmée,
+   . */
+  private _signalerClientsExclus(skipped: { skippedNoLocation?: number; skippedIneligible?: number; details?: Array<{ reason?: string }> } | null | undefined): void {
+    const total = (skipped?.skippedNoLocation ?? 0) + (skipped?.skippedIneligible ?? 0);
+    if (total <= 0) return;
+    const raisons = Array.from(new Set((skipped?.details || []).map((d) => d.reason).filter(Boolean)));
+    this.msg.add({
+      severity: 'warn',
+      summary: `${total} client(s) non inclus dans cette collecte`,
+      detail: raisons.join(' · ') || 'Voir les détails du planning pour en savoir plus.',
+      sticky: true,
     });
   }
 

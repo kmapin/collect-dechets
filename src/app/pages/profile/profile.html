@@ -28,6 +28,13 @@
         class="btn btn-primary mt-2"
         >Télécharger mon QR Code</a
       >
+      <button
+        type="button"
+        (click)="renewQRCode(user?._id)"
+        class="btn btn-outline mt-2"
+        title="L'ancien QR Code ne sera plus valide une fois régénéré"
+        >Régénérer mon QR Code</button
+      >
       }@else {
       <a (click)="renewQRCode(user?._id)" class="btn btn-primary mt-2"
         >Générer mon QR Code</a

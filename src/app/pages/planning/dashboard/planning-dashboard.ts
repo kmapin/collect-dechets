@@ -412,12 +412,29 @@ export class PlanningDashboard implements OnInit, OnDestroy {
       next: (res) => {
         this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'en_cours');
         this.msg.add({ severity: 'info', summary: 'Démarré', detail: `${p.reference} est maintenant en cours.` });
+        this._signalerClientsExclus(res?.data?.skipped);
       },
       error: (err) => {
         const detail = err?.error?.error?.message ?? 'Impossible de démarrer ce planning';
         this.msg.add({ severity: 'error', summary: 'Erreur', detail });
       },
       complete: () => this.actionLoading.set(null),
+    });
+  }
+
+  /** Même raisonnement que planning-detail.ts::_signalerClientsExclus — démarrer un
+   * planning depuis la liste (et pas seulement depuis le détail) doit aussi rendre visibles
+   * les clients exclus de la génération de Collecte (voir planning._skippedSummary,
+   * services/planning.js::startPlanning), jusqu'ici invisibles hors des logs serveur. */
+  private _signalerClientsExclus(skipped: { skippedNoLocation?: number; skippedIneligible?: number; details?: Array<{ reason?: string }> } | null | undefined): void {
+    const total = (skipped?.skippedNoLocation ?? 0) + (skipped?.skippedIneligible ?? 0);
+    if (total <= 0) return;
+    const raisons = Array.from(new Set((skipped?.details || []).map((d) => d.reason).filter(Boolean)));
+    this.msg.add({
+      severity: 'warn',
+      summary: `${total} client(s) non inclus dans cette collecte`,
+      detail: raisons.join(' · ') || 'Voir les détails du planning pour en savoir plus.',
+      sticky: true,
     });
   }
 
