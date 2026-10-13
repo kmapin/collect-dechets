@@ -788,6 +788,8 @@ section{
   overflow: hidden;
   width: 100%;
   max-width: 480px;
+  display: flex;
+  flex-direction: column;
 }
 
 .agency-card:hover {
@@ -1004,7 +1006,8 @@ section{
 }
 
 .agency-actions {
-  margin-top: 16px;
+  margin-top: auto;
+  padding-top: 16px;
   display: flex;
   gap: 12px;
   justify-content: flex-end;
