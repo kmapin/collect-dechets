@@ -181,7 +181,7 @@
               <span class="tab-badge">{{ statistics.totalReporting }}</span>
             }
             @if (tab.badge) {
-              <span class="tab-badge">{{ tab.badge }}</span>
+              <span class="tab-badge tab-badge--neutral">{{ tab.badge }}</span>
             }
           </button>
         }
@@ -2663,22 +2663,14 @@
         </div>
         <div class="form-group">
           <label for="neighborhood">Quartier</label>
-          <small class="form-help-text">
-            <i class="material-icons">info_outline</i>
-            Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs quartiers
-          </small>
-          <select
-            id="neighborhood"
-            [(ngModel)]="userData.address.neighborhood"
-            class="form-control"
-            multiple
+          <app-multi-select
+            [options]="toMultiSelectOptions(quartiers)"
+            [value]="userData.address.neighborhood"
+            (valueChange)="userData.address.neighborhood = $any($event)"
             [disabled]="quartiers.length === 0"
-            title="Sélectionnez un ou plusieurs quartiers. Utilisez Ctrl+clic pour sélectionner plusieurs options."
-          >
-            @for (quartier of quartiers; track quartier) {
-              <option [value]="quartier">{{ quartier }}</option>
-            }
-          </select>
+            searchPlaceholder="Rechercher un quartier..."
+            placeholder="Sélectionner un ou plusieurs quartiers"
+          ></app-multi-select>
           @if (userData.address.neighborhood && userData.address.neighborhood.length > 0) {
             <small class="form-help-text">
               {{ userData.address.neighborhood.length }} quartier(s) sélectionné(s)

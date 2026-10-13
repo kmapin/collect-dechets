@@ -3949,6 +3949,15 @@ export class AdminDashboard implements OnInit, OnDestroy {
     return this.tabBadges[tabId] ?? 0;
   }
 
+  // Rouge réservé aux badges qui appellent une action (incidents non résolus, retraits en
+  // attente) — un simple décompte (agences, utilisateurs...) reste neutre (voir
+  // .tab-badge--neutral, admin-dashboard.scss) pour ne pas banaliser le rouge.
+  private static readonly BADGES_ACTIONNABLES = new Set(['incidents', 'withdrawals']);
+
+  estBadgeActionnable(tabId: string): boolean {
+    return AdminDashboard.BADGES_ACTIONNABLES.has(tabId);
+  }
+
   // getTabBadge(tabId: string): number {
   //   switch (tabId) {
   //     case "overview":

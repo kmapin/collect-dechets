@@ -1,0 +1,182 @@
+.ms-wrap {
+  position: relative;
+  width: 100%;
+}
+
+// Même gabarit que .form-group select/.form-input (padding/border/radius) — correction
+// d'une confusion précédente : dans le drawer "Définir les zones couvertes", Ville/
+// Arrondissement/Secteur sont des <select class="form-control"> natifs (pas des
+// app-territory-select), stylés par cette convention globale (16px/12px/medium-gray).
+.ms-control {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 40px 8px 12px;
+  border-radius: 12px;
+  background: #fff;
+  cursor: text;
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &--open {
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
+  }
+
+  &--disabled {
+    background: var(--light-gray, #f3f4f6);
+    cursor: not-allowed;
+
+    .ms-input {
+      cursor: not-allowed;
+    }
+  }
+}
+
+.ms-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 10px;
+  background: var(--surface-100, #eff6ff);
+  color: var(--primary-color, #1d4ed8);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  max-width: 100%;
+}
+
+.ms-chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+
+  &:hover:not(:disabled) {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.ms-input {
+  flex: 1 1 80px;
+  min-width: 80px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 1rem;
+  font-family: "Inter", sans-serif;
+  color: var(--text-primary, #1e293b);
+  border-color: transparent !important;
+  box-shadow: none !important;
+
+  &::placeholder {
+    color: var(--text-secondary, #94a3b8);
+  }
+
+  // Annule la règle globale input:focus (styles.scss) — elle ajoute son propre anneau de
+  // focus à CET input, redondant avec celui déjà posé sur .ms-control--open (le cadre
+  // visible dans la capture : deux anneaux imbriqués au lieu d'un seul).
+  &:focus {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.ms-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary, #94a3b8);
+  font-size: 1.2rem;
+  pointer-events: none;
+}
+
+// position: fixed (coordonnées top/left/width calculées en JS, voir
+// multi-select.ts::updateDropdownPosition) plutôt qu'absolute+top:100% classique : ce
+// composant est utilisé dans des drawers au corps overflow-y:auto, où un panneau absolu
+// imbriqué se ferait tronquer dès qu'il dépasse la zone visible/défilée.
+.ms-dropdown {
+  position: fixed;
+  z-index: 1000;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--light-gray, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-height: 260px;
+  overflow-y: auto;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    color: var(--text-primary, #1e293b);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--surface-50, #f8fafc);
+    }
+  }
+}
+
+.ms-item--active {
+  background: var(--surface-100, #eff6ff);
+  font-weight: 600;
+}
+
+.ms-checkbox {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--medium-gray, #d1d5db);
+  border-radius: 4px;
+  color: #fff;
+
+  i {
+    font-size: 14px;
+  }
+
+  &--checked {
+    background: var(--primary-color, #3b82f6);
+    border-color: var(--primary-color, #3b82f6);
+  }
+}
+
+.ms-empty {
+  color: var(--text-secondary, #94a3b8);
+  cursor: default !important;
+
+  &:hover {
+    background: transparent !important;
+  }
+}

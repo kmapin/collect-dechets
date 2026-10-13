@@ -285,8 +285,21 @@
   text-align: center;
 }
 
+// Simple décompte (Agences/Utilisateurs/Vue d'ensemble...) : rouge laisse entendre un
+// problème/urgence, réservé aux badges qui appellent une action (Incidents, Retraits en
+// attente — voir .tab-badge seul, juste au-dessus).
+.tab-badge--neutral {
+  background: var(--surface-300, #cbd5e1);
+  color: var(--surface-800, #1e293b);
+  font-weight: 600;
+}
+
 .tab-btn.active .tab-badge {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.tab-btn.active .tab-badge--neutral {
+  color: var(--white);
 }
 
 .tab-content {
@@ -1900,6 +1913,26 @@ input.filter-select {
   font-family: "Inter", sans-serif;
   font-size: 1rem;
   transition: all 0.3s ease;
+}
+
+
+
+::ng-deep .agent-address-section .ts-input {
+  padding: 16px 30px 16px 16px !important;
+  border: 2px solid var(--medium-gray) !important;
+  border-radius: 12px !important;
+  font-family: "Inter", sans-serif !important;
+  font-size: 1rem !important;
+
+  &:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1) !important;
+  }
+
+  &--disabled,
+  &:disabled {
+    background: var(--light-gray, #f3f4f6) !important;
+  }
 }
 
 // Champ mot de passe avec bouton afficher/masquer (même modèle que login.css).
@@ -5094,8 +5127,8 @@ input.filter-select {
 }
 
 .drawer-section {
-  margin-bottom: 24px;
-  padding: 24px;
+  // margin-bottom: 24px;
+  padding:0 24px;
 }
 
 .drawer-section-title {

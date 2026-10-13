@@ -173,8 +173,21 @@
   text-align: center;
 }
 
+// Simple décompte (Audit Agences) : rouge laisse entendre un problème/urgence, réservé aux
+// badges qui appellent une action (Incidents — voir .tab-badge seul, juste au-dessus).
+// Même convention que agency-dashboard.scss / admin-dashboard.scss.
+.tab-badge--neutral {
+  background: var(--surface-300, #cbd5e1);
+  color: var(--surface-800, #1e293b);
+  font-weight: 600;
+}
+
 .tab-btn.active .tab-badge {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.tab-btn.active .tab-badge--neutral {
+  color: var(--white);
 }
 
 .tab-content {

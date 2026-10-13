@@ -149,7 +149,7 @@
           (click)="switchTab(tab.id)">
           <i class="material-icons">{{ tab.icon }}</i>
           {{ tab.label }}
-          <span *ngIf="getTabBadge(tab.id) > 0" class="tab-badge">
+          <span *ngIf="getTabBadge(tab.id) > 0" class="tab-badge" [class.tab-badge--neutral]="!estBadgeActionnable(tab.id)">
             {{ getTabBadge(tab.id) }}
           </span>
         </button>
@@ -2973,7 +2973,7 @@
       </div>
 
       <!-- Adresse -->
-      <div class="drawer-section">
+      <div class="drawer-section agent-address-section">
         <h4 class="drawer-section-title"><i class="material-icons">location_on</i> Adresse</h4>
         <div class="form-row">
           <div class="form-group">

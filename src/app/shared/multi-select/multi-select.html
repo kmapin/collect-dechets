@@ -1,0 +1,54 @@
+<div class="ms-wrap">
+  <div
+    #control
+    class="ms-control"
+    [class.ms-control--disabled]="disabled"
+    [class.ms-control--open]="dropdownOpen"
+    (mousedown)="onControlMouseDown($event)"
+  >
+    @for (opt of selectedOptions; track opt.value) {
+      <span class="ms-chip">
+        {{ opt.label }}
+        <button
+          type="button"
+          class="ms-chip__remove"
+          [disabled]="disabled"
+          (mousedown)="$event.preventDefault(); $event.stopPropagation(); removeChip(opt.value)"
+        >×</button>
+      </span>
+    }
+    <input
+      #searchInput
+      type="text"
+      class="ms-input"
+      [placeholder]="selectedOptions.length ? '' : placeholder"
+      [(ngModel)]="search"
+      [disabled]="disabled"
+      (focus)="openDropdown()"
+      (blur)="closeDropdown()"
+    />
+    <i class="material-icons ms-chevron">expand_more</i>
+  </div>
+  @if (dropdownOpen) {
+    <ul
+      class="ms-dropdown"
+      [style.top]="dropdownStyle.top"
+      [style.left]="dropdownStyle.left"
+      [style.width]="dropdownStyle.width"
+    >
+      @for (opt of suggestions; track opt.value) {
+        <li [class.ms-item--active]="isSelected(opt)" (mousedown)="$event.preventDefault(); toggle(opt)">
+          <span class="ms-checkbox" [class.ms-checkbox--checked]="isSelected(opt)">
+            @if (isSelected(opt)) {
+              <i class="material-icons">check</i>
+            }
+          </span>
+          {{ opt.label }}
+        </li>
+      }
+      @if (!suggestions.length) {
+        <li class="ms-empty">Aucun résultat</li>
+      }
+    </ul>
+  }
+</div>

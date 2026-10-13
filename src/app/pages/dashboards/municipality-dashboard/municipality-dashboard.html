@@ -107,7 +107,7 @@
           <i class="material-icons">{{ tab.icon }}</i>
           {{ tab.label }}
           @if (tab.badge) {
-          <span class="tab-badge">{{ tab.badge }}</span>
+          <span class="tab-badge" [class.tab-badge--neutral]="tab.id !== 'incidents'">{{ tab.badge }}</span>
           }
         </button>
         }

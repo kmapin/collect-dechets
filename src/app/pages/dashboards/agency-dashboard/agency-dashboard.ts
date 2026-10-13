@@ -86,8 +86,8 @@ import { RippleModule } from "primeng/ripple";
 import { Signalement } from "../../shared_pages/signalement/signalement";
 import { ExcelImportComponent } from "../../../components/excel-import/excel-import.component";
 import { AgencyImportService } from "../../../services/agency-import.service";
-import { MultiSelectModule } from 'primeng/multiselect';
 import { TerritorySelectComponent, TerritoryOption, toTerritoryOptions, toTerritoryOptionsById } from "../../../shared/territory-select/territory-select";
+import { MultiSelectComponent, toMultiSelectOptions } from "../../../shared/multi-select/multi-select";
 interface Client {
   id: string;
   name: string;
@@ -253,7 +253,7 @@ export enum CollectionStatus1 {
     MatIcon,
     LoadingSpinnerComponent,
 
-    MultiSelectModule,
+    MultiSelectComponent,
     TableModule,
     ButtonModule,
     RatingModule,
@@ -307,6 +307,7 @@ export enum CollectionStatus1 {
 export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   readonly toTerritoryOptions = toTerritoryOptions;
   readonly toTerritoryOptionsById = toTerritoryOptionsById;
+  readonly toMultiSelectOptions = toMultiSelectOptions;
 
 
   @ViewChild("scrollMe") private myScrollContainer!: ElementRef;
