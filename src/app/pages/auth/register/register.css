@@ -65,6 +65,10 @@
 
     .account-type-option {
       cursor: pointer;
+      /* .account-types (grid) étire déjà ce label à la hauteur de la ligne, mais sans ceci
+         .account-type-card (son enfant) garde sa hauteur de contenu naturelle — les deux
+         cards doivent toujours faire la même taille, peu importe la longueur du texte. */
+      display: flex;
     }
 
     .account-type-option input[type="radio"] {
@@ -72,6 +76,7 @@
     }
 
     .account-type-card {
+      width: 100%;
       padding: 20px;
       border: 2px solid var(--medium-gray);
       border-radius: 12px;
