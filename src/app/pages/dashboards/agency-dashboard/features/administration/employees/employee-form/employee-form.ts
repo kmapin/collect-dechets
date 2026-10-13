@@ -8,6 +8,7 @@ import { Employee, EMPLOYEE_ROLES } from '../employee.model';
 import { NotificationService } from '../../../../../../../services/notification.service';
 import { TerritoryHttpService } from '../../../../../../../services/territory-http.service';
 import { TerritorySelectComponent, TerritoryOption, toTerritoryOptionsById } from '../../../../../../../shared/territory-select/territory-select';
+import { PhoneInputDirective } from '../../../../../../../shared/phone-input.directive';
 
 /** Même validateur que agency-dashboard.ts::passwordMatchValidator (mot de passe requis
  * uniquement à la création — voir toggleValidateursMotDePasse ci-dessous). */
@@ -23,7 +24,7 @@ function passwordMatchValidator(): ValidatorFn {
 @Component({
   selector: 'app-employee-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TerritorySelectComponent],
+  imports: [CommonModule, ReactiveFormsModule, TerritorySelectComponent, PhoneInputDirective],
   templateUrl: './employee-form.html',
   styleUrl: './employee-form.scss',
 })

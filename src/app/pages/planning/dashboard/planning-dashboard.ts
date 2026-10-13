@@ -426,8 +426,8 @@ export class PlanningDashboard implements OnInit, OnDestroy {
    * planning depuis la liste (et pas seulement depuis le détail) doit aussi rendre visibles
    * les clients exclus de la génération de Collecte (voir planning._skippedSummary,
    * services/planning.js::startPlanning), jusqu'ici invisibles hors des logs serveur. */
-  private _signalerClientsExclus(skipped: { skippedNoLocation?: number; skippedIneligible?: number; details?: Array<{ reason?: string }> } | null | undefined): void {
-    const total = (skipped?.skippedNoLocation ?? 0) + (skipped?.skippedIneligible ?? 0);
+  private _signalerClientsExclus(skipped: { skippedNoLocation?: number; skippedIneligible?: number; skippedDuplicate?: number; details?: Array<{ reason?: string }> } | null | undefined): void {
+    const total = (skipped?.skippedNoLocation ?? 0) + (skipped?.skippedIneligible ?? 0) + (skipped?.skippedDuplicate ?? 0);
     if (total <= 0) return;
     const raisons = Array.from(new Set((skipped?.details || []).map((d) => d.reason).filter(Boolean)));
     this.msg.add({

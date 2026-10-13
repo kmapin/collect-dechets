@@ -20,7 +20,7 @@
   <div class="form-row">
     <div class="form-group">
       <label class="form-label">Téléphone <span class="required">*</span></label>
-      <input class="form-control" type="tel" formControlName="phone" />
+      <input class="form-control" type="tel" formControlName="phone" appPhoneInput attachDropdownToBody />
       @if (champInvalide('phone')) {
         <div class="form-error">Le téléphone est requis.</div>
       }

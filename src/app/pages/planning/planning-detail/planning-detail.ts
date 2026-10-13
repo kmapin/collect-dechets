@@ -640,8 +640,8 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
    * planning peuvent être exclus de la génération de Collecte sans que l'agence le sache
    * — couverture de zone non confirmée,
    . */
-  private _signalerClientsExclus(skipped: { skippedNoLocation?: number; skippedIneligible?: number; details?: Array<{ reason?: string }> } | null | undefined): void {
-    const total = (skipped?.skippedNoLocation ?? 0) + (skipped?.skippedIneligible ?? 0);
+  private _signalerClientsExclus(skipped: { skippedNoLocation?: number; skippedIneligible?: number; skippedDuplicate?: number; details?: Array<{ reason?: string }> } | null | undefined): void {
+    const total = (skipped?.skippedNoLocation ?? 0) + (skipped?.skippedIneligible ?? 0) + (skipped?.skippedDuplicate ?? 0);
     if (total <= 0) return;
     const raisons = Array.from(new Set((skipped?.details || []).map((d) => d.reason).filter(Boolean)));
     this.msg.add({

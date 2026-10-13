@@ -310,7 +310,7 @@
 
 @if (afficherFormulaire()) {
   <div class="employee-drawer-overlay" appScrollLock>
-    <div class="employee-drawer" (click)="$event.stopPropagation()">
+    <div class="employee-drawer">
       <div class="employee-drawer-header">
         <h2>{{ employeEnEdition() ? 'Modifier l\'employé' : 'Ajouter un employé' }}</h2>
         <button class="close-btn" type="button" (click)="fermerFormulaire()">
