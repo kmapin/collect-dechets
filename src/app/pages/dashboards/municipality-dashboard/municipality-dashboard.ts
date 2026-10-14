@@ -1,10 +1,11 @@
-import { ChangeDetectorRef, Component, OnInit, signal } from "@angular/core";
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
-import { forkJoin, Observable } from "rxjs";
+import { forkJoin, Observable, Subscription } from "rxjs";
 import { map } from "rxjs/operators";
 import { AuthService } from "../../../services/auth.service";
+import { Webstockets, SocketNotification } from "../../../core/services/webstockets";
 import { AgencyService } from "../../../services/agency.service";
 import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
@@ -164,7 +165,7 @@ export interface GroupedZoneStatistics {
   templateUrl: './municipality-dashboard.html',
   styleUrl: './municipality-dashboard.scss'
 })
-export class MunicipalityDashboard  implements OnInit {
+export class MunicipalityDashboard  implements OnInit, OnDestroy {
   readonly toTerritoryOptions = toTerritoryOptions;
   currentUser: RegisterUserData | null = null;
   activeTab = "overview";
@@ -252,14 +253,31 @@ export class MunicipalityDashboard  implements OnInit {
     private adminService: Admin,
     private collectionService: CollectionService,
     private notificationService: NotificationService,
+    private websocketService: Webstockets,
     private router: Router,
     private cd: ChangeDetectorRef
   ) {}
+
+  private newSignalementSub?: Subscription;
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
     this.loadMunicipalityData();
     this.filterIncidents();
+
+    // TEMPS-REEL-WEBSOCKET.md §4 (Municipalité) — le backend notifie déjà tous
+    // les comptes `municipality` à la création d'un signalement (voir
+    // services/signalement.service.js::resolveSignalementAudience, même canal
+    // que côté agence) ; seul ce dashboard ne l'écoutait jamais.
+    this.newSignalementSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'Signalement') {
+        this.loadAllSignalements();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.newSignalementSub?.unsubscribe();
   }
 
   loadMunicipalityData(): void {

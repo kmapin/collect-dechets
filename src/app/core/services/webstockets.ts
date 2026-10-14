@@ -23,7 +23,19 @@ export type SocketNotification = NotificationItem;
 export class Webstockets {
   private socket: Socket | null = null;
   private connected$ = new BehaviorSubject<boolean>(false);
-  
+
+  // Rooms demandées via joinRoom() — rejouées à chaque événement 'connect'
+  // (connexion initiale ET reconnexions après coupure réseau : socket.io
+  // attribue un nouveau socket.id à chaque reconnexion, qui ne garde jamais
+  // l'appartenance aux rooms d'une connexion précédente). Corrige une course
+  // critique : AuthService appelle connect() puis joinRoom(userId) sur la même
+  // ligne, alors que connect() est asynchrone — joinRoom() s'exécutait donc
+  // toujours avant que le socket soit réellement connecté, échouait
+  // silencieusement (this.socket.connected encore false) et n'était jamais
+  // retenté, empêchant structurellement toute notification temps réel ciblée
+  // sur un utilisateur (room = son propre userId) d'être jamais reçue.
+  private roomsToJoin = new Set<string>();
+
   // Observables pour les messages
   private messageSent$ = new Subject<SocketMessage>();
   private messageRead$ = new Subject<SocketMessage>();
@@ -34,6 +46,10 @@ export class Webstockets {
   private notificationRead$ = new Subject<{ id: string }>();
   private notificationDeleted$ = new Subject<{ id: string }>();
   private allNotificationsRead$ = new Subject<{ modifiedCount: number }>();
+
+  // Catalogue tarifaire public d'une agence (room `agency-catalog:<agencyId>`,
+  // rejoignable par tout utilisateur connecté — voir server.js::joinRoom).
+  private pricingUpdated$ = new Subject<{ agencyId: string }>();
 
   constructor() {
     // Initialiser le socket mais ne pas se connecter automatiquement
@@ -74,6 +90,10 @@ export class Webstockets {
     this.socket.on('connect', () => {
       console.log(' WebSocket connecté');
       this.connected$.next(true);
+      this.roomsToJoin.forEach((room) => {
+        console.log(' Rejoindre la room (post-connect):', room);
+        this.socket!.emit('joinRoom', room);
+      });
     });
 
     this.socket.on('disconnect', () => {
@@ -122,6 +142,11 @@ export class Webstockets {
       console.log(' Toutes les notifications marquées comme lues:', data);
       this.allNotificationsRead$.next(data);
     });
+
+    this.socket.on('pricingUpdated', (data: { agencyId: string }) => {
+      console.log(' Catalogue tarifaire mis à jour:', data);
+      this.pricingUpdated$.next(data);
+    });
   }
 
   connect(): void {
@@ -139,15 +164,20 @@ export class Webstockets {
   }
 
   joinRoom(userId: string): void {
+    this.roomsToJoin.add(userId);
     if (this.socket && this.socket.connected) {
       console.log(' Rejoindre la room:', userId);
       this.socket.emit('joinRoom', userId);
     } else {
-      console.warn(' Socket non connecté. Impossible de rejoindre la room.');
+      // Pas une erreur : rejointe automatiquement dès l'événement 'connect'
+      // (voir roomsToJoin ci-dessus) — la connexion est déjà en cours
+      // (connect() appelé juste avant par AuthService).
+      console.log(' Socket pas encore connecté, room en attente :', userId);
     }
   }
 
   leaveRoom(userId: string): void {
+    this.roomsToJoin.delete(userId);
     if (this.socket && this.socket.connected) {
       console.log(' Quitter la room:', userId);
       this.socket.emit('leaveRoom', userId);
@@ -188,6 +218,10 @@ export class Webstockets {
 
   onAllNotificationsRead(): Observable<{ modifiedCount: number }> {
     return this.allNotificationsRead$.asObservable();
+  }
+
+  onPricingUpdated(): Observable<{ agencyId: string }> {
+    return this.pricingUpdated$.asObservable();
   }
 
   

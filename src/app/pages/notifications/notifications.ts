@@ -1,10 +1,12 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+import { Webstockets } from '../../core/services/webstockets';
 import { LoadingSpinnerComponent } from '../../components/loading-spinner/loading-spinner.component';
 import { NotificationItem, notificationTypeLabel, notificationTypeIcon } from '../../models/notification.model';
 import { resolveNotificationNavigation, dashboardRouteForRole } from '../../shared/notification-route.util';
@@ -23,11 +25,13 @@ const PAGE_SIZE = 20;
   templateUrl: './notifications.html',
   styleUrl: './notifications.scss',
 })
-export class NotificationsComponent implements OnInit {
+export class NotificationsComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly notificationService = inject(NotificationService);
+  private readonly websocketService = inject(Webstockets);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private socketSubs: Subscription[] = [];
 
   readonly planningSummaryId = signal<string | null>(null);
 
@@ -55,6 +59,48 @@ export class NotificationsComponent implements OnInit {
     this.filter.set(initial === 'unread' ? 'unread' : 'all');
     this.load(true);
     this.notificationService.refreshUnreadCount();
+
+    // TEMPS-REEL-WEBSOCKET.md §3 (Fondation) — jusqu'ici cette page ne faisait
+    // que du pull HTTP (chargement une fois à l'ouverture) : une notification
+    // reçue, lue ou supprimée sur un autre appareil/onglet pendant que cette
+    // page reste ouverte ne s'y reflétait jamais, contrairement au compteur
+    // partagé (`unreadCount$`) qui, lui, est déjà en live.
+    this.socketSubs.push(
+      this.websocketService.onNewNotification().subscribe(notification => {
+        this.items.set([notification as unknown as NotificationItem, ...this.items()]);
+        this.total.set(this.total() + 1);
+      }),
+      this.websocketService.onNotificationRead().subscribe(({ id }) => {
+        if (this.filter() === 'unread') {
+          // Filtre "non lues" : un item marqué lu ailleurs doit disparaître
+          // de cette vue, pas juste changer d'état visuel.
+          const existait = this.items().some(n => n._id === id);
+          if (!existait) return;
+          this.items.set(this.items().filter(n => n._id !== id));
+          this.total.set(Math.max(0, this.total() - 1));
+        } else {
+          this.setLocalRead(id, true);
+        }
+      }),
+      this.websocketService.onNotificationDeleted().subscribe(({ id }) => {
+        const existait = this.items().some(n => n._id === id);
+        if (!existait) return;
+        this.items.set(this.items().filter(n => n._id !== id));
+        this.total.set(Math.max(0, this.total() - 1));
+      }),
+      this.websocketService.onAllNotificationsRead().subscribe(() => {
+        if (this.filter() === 'unread') {
+          this.items.set([]);
+          this.total.set(0);
+        } else {
+          this.items.set(this.items().map(n => ({ ...n, read: true })));
+        }
+      }),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.socketSubs.forEach(sub => sub.unsubscribe());
   }
 
   setFilter(next: FilterKey): void {

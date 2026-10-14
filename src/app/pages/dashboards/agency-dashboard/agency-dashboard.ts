@@ -1177,6 +1177,23 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       // statistiques déjà affichées, avec les filtres période/zone/type en cours.
       if (notification?.type === 'Planning') {
         this.loadAgencyStatistics(this.currentUser);
+        // TEMPS-REEL-WEBSOCKET.md §4 (Agence) — qrValidation.js notifie désormais
+        // aussi le personnel de l'agence quand un collecteur valide une collecte :
+        // recharge la liste du jour, remplace le `setInterval` 30s abandonné plus
+        // bas (ngOnInit) qui faisait la même chose en aveugle.
+        if (this.currentUser?.agencyId) {
+          this.loadCollectDay();
+        }
+      }
+      // TEMPS-REEL-WEBSOCKET.md §4 (Agence) — un autre manager de la même
+      // agence qui modifie une zone de couverture ou un tarif doit se refléter
+      // ici sans rechargement manuel (controllers/agency.js::upadateZone et
+      // controllers/pricingAgency.js, notifyUsers réutilisé).
+      if (notification?.type === 'Zone') {
+        this.loadZones(this.currentUser);
+      }
+      if (notification?.type === 'Tarif') {
+        this.loadTariffs();
       }
     });
 
@@ -1213,9 +1230,6 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     // this.loadCollectDay();
     this.getAllCountries();
 
-    // setInterval(() => {
-    //   this.loadCollectDay();
-    // }, 30000);
     this.loadCollectHistory();
     // this.filterIncidents();
     this.countUnreadMessages();

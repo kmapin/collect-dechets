@@ -20,6 +20,8 @@ import { PlanningTeamsTabs } from '../../../shared/planning-teams-tabs/planning-
 import { Breadcrumb, BreadcrumbItem } from '../../../shared/breadcrumb/breadcrumb';
 import { AuthService } from '../../../services/auth.service';
 import { dashboardRouteForRole, dashboardLabelForRole } from '../../../shared/notification-route.util';
+import { Webstockets, SocketNotification } from '../../../core/services/webstockets';
+import { Subscription } from 'rxjs';
 
 interface StatCard {
   label: string;
@@ -56,6 +58,8 @@ export class PlanningDashboard implements OnInit, OnDestroy {
   private msg     = inject(MessageService);
   private confirm = inject(ConfirmationService);
   private router  = inject(Router);
+  private websocketService = inject(Webstockets);
+  private planningUpdateSub?: Subscription;
 
   isLoading = signal(true);
 
@@ -159,8 +163,6 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     this.planningService.loadEvolution(period === 'week' ? 7 : 30);
   }
 
-  private refreshTimer: any;
-
   ngOnInit(): void {
     this.planningService.loadStats();
     this.planningService.loadZones();
@@ -169,25 +171,31 @@ export class PlanningDashboard implements OnInit, OnDestroy {
     this.teamService.loadTeams();
     this.planningService.loadPlannings();
 
-    
+
     setTimeout(() => {
       this.recentPlannings.set(this.planningService.getRecentPlannings(6));
       this.isLoading.set(false);
       this._initCharts();
     }, 1200);
 
-   
-    this.refreshTimer = setInterval(() => {
-      this.planningService.loadPlannings();
-      setTimeout(() => {
-        this.recentPlannings.set(this.planningService.getRecentPlannings(6));
-        this._initCharts();
-      }, 800);
-    }, 30_000);
+    // TEMPS-REEL-WEBSOCKET.md §5 — remplace le `setInterval` 30s (aveugle,
+    // pollait même sans aucun changement) par un rechargement déclenché par
+    // le même type 'Planning' que les autres écrans (demandeCollecte.js,
+    // qrValidation.js, planning.js émettent déjà ce type sur toute mutation
+    // d'un planning/collecte).
+    this.planningUpdateSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'Planning') {
+        this.planningService.loadPlannings();
+        setTimeout(() => {
+          this.recentPlannings.set(this.planningService.getRecentPlannings(6));
+          this._initCharts();
+        }, 800);
+      }
+    });
   }
 
   ngOnDestroy(): void {
-    clearInterval(this.refreshTimer);
+    this.planningUpdateSub?.unsubscribe();
   }
 
   private _initCharts(): void {
