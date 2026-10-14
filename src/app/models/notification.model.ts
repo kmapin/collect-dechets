@@ -9,7 +9,12 @@ export type NotificationType =
   | 'PaiementAgent'
   | 'Assingnment'
   | 'AgencyAdd'
-  | 'Unsubscribed';
+  | 'Unsubscribed'
+  | 'Zone'
+  | 'Tarif'
+  | 'Equipe'
+  | 'DroitsFinance'
+  | 'DroitsAdministration';
 
 // Fusion Subscription -> Contrat : 'subscription' retiré — une notification type:
 // 'Subscribed' (texte utilisateur inchangé) cible désormais un Contrat (kind: 'contrat'),
@@ -69,6 +74,11 @@ export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   Assingnment: 'Affectation',
   AgencyAdd: 'Agence ajoutée',
   Unsubscribed: 'Désabonnement',
+  Zone: 'Zone de couverture',
+  Tarif: 'Tarification',
+  Equipe: 'Équipe',
+  DroitsFinance: 'Droits financiers',
+  DroitsAdministration: 'Droits d\'administration',
 };
 
 export const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
@@ -83,6 +93,11 @@ export const NOTIFICATION_TYPE_ICONS: Record<string, string> = {
   Assingnment: 'assignment',
   AgencyAdd: 'business',
   Unsubscribed: 'unsubscribe',
+  Zone: 'map',
+  Tarif: 'sell',
+  Equipe: 'groups',
+  DroitsFinance: 'admin_panel_settings',
+  DroitsAdministration: 'admin_panel_settings',
 };
 
 export function notificationTypeLabel(type: string): string {

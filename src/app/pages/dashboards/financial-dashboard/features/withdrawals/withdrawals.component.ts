@@ -1,9 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { Subscription } from 'rxjs';
+import { Webstockets, SocketNotification } from '../../../../../core/services/webstockets';
 import { aLaPermission, Periode, Retrait } from '../../models';
 import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
@@ -59,10 +61,12 @@ function libelleStatut(statut?: string): string {
   templateUrl: './withdrawals.component.html',
   styleUrl: './withdrawals.component.scss',
 })
-export class WithdrawalsComponent {
+export class WithdrawalsComponent implements OnInit, OnDestroy {
   private readonly financeData = inject(FINANCE_DATA_SERVICE);
   private readonly snackBar = inject(MatSnackBar);
   private readonly session = inject(SESSION_SERVICE);
+  private readonly websocketService = inject(Webstockets);
+  private nouveauRetraitSub?: Subscription;
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: null });
 
   
@@ -102,6 +106,23 @@ export class WithdrawalsComponent {
 
   constructor() {
     this.charger();
+  }
+
+  ngOnInit(): void {
+    // TEMPS-REEL-WEBSOCKET.md §4 (Admin/Finance) — jusqu'ici seuls les 2
+    // boutons "Actualiser" manuels (reessayer/resetFiltres) rafraîchissaient
+    // cette liste. controllers/financeStats.js::enregistrerRetrait et
+    // controllers/adminRetraits.js notifient désormais tous deux les Super
+    // Admin via le type 'Retrait' sur le même canal `newNotification`.
+    this.nouveauRetraitSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'Retrait') {
+        this.charger();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.nouveauRetraitSub?.unsubscribe();
   }
 
   onRechercheChange(valeur: string): void {

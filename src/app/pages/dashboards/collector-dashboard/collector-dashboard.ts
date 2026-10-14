@@ -6,6 +6,14 @@ import { CollectionService } from "../../../services/collection.service";
 import { NotificationService } from "../../../services/notification.service";
 import { AuthService } from "../../../services/auth.service";
 import {
+  CollectorPlanningService,
+  CollectorCollecte,
+  CollectorPlanning,
+  ScanByAccountPayload,
+  ScanByLocationPayload,
+  CreateSignalementPayload,
+} from "../../../services/collector-planning.service";
+import {
   Collection,
   CollectionStatus,
   CollectionRoute,
@@ -18,6 +26,9 @@ import { ScrollLockDirective } from "../../../shared/scroll-lock.directive";
 
 interface CollectionPoint {
   id: string;
+  clientId: string;
+  serviceLocationId: string | null;
+  neighborhood: string;
   address: string;
   doorNumber: string;
   doorColor?: string;
@@ -30,6 +41,7 @@ interface CollectionPoint {
   priority: "normal" | "urgent";
   estimatedDuration: number;
   distance?: number;
+  raw: CollectorCollecte;
 }
 
 interface RouteOptimization {
@@ -49,6 +61,18 @@ interface IncidentReport {
   location: { latitude: number; longitude: number };
   status: "open" | "resolved";
 }
+
+// Catégories affichées au collecteur (langage métier terrain) -> catégories
+// réellement acceptées par l'API Signalement (config/..., services/signalement.service.js
+// TYPES_VALIDES) — les deux catalogues ne correspondent pas terme à terme, la
+// description/le commentaire libre porte le détail exact, le `type` ne sert
+// qu'à la catégorisation grossière côté agence.
+const INCIDENT_TYPE_TO_SIGNALEMENT_TYPE: Record<string, CreateSignalementPayload["type"]> = {
+  non_compliant: "compliance_issue",
+  access_blocked: "other",
+  equipment_issue: "technical_issue",
+  other: "other",
+};
 
 @Component({
   selector: 'app-collector-dashboard',
@@ -70,6 +94,13 @@ export class CollectorDashboard  implements OnInit {
   // scannedClient: ClientApi | null = null;
   scannedClient: any | null = null;
   showClientModal = false;
+  isLoadingCollections = false;
+
+  // Payload de scan QR en attente de confirmation (rempli par onQrCodeResult,
+  // consommé par confirmCurrentCollection) — voir le commentaire de cette
+  // dernière pour le choix de réutiliser le même point d'entrée pour la
+  // confirmation manuelle ET le scan QR.
+  private pendingScanPayload: ScanByLocationPayload | ScanByAccountPayload | null = null;
 
   // File input pour l'import de QR code
   @ViewChild("fileInput", { static: false })
@@ -116,125 +147,130 @@ export class CollectorDashboard  implements OnInit {
     private collectionService: CollectionService,
     private notificationService: NotificationService,
     private authService: AuthService,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private collectorPlanningService: CollectorPlanningService,
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    console.log("this.currentUser", this.currentUser);
-
     this.loadCollectorData();
-    this.onQrCodeResult(
-      "https://projectwise.onrender.com/api/collecte/scan?id=687fe508693b96642442a30b&ts=1757606939990"
-    );
   }
 
   loadCollectorData(): void {
     this.loadTodayCollections();
-    this.loadTodayIncidents();
-    this.loadRecentHistory();
-    this.initializeRouteOptimization();
   }
 
+  // TEMPS-REEL-WEBSOCKET.md §4 (Collecteur) — remplace les données inventées
+  // par le vrai planning du jour (GET /api/planning/collector/:id/collectes,
+  // services/planning.js::getTeamPlanningCollectesForCollector) : résout les
+  // plannings actifs de l'équipe de ce collecteur, puis les Collecte dues
+  // AUJOURD'HUI pour ces plannings — même source que ce qui alimente déjà les
+  // notifications temps réel de planning (resolvePlanningRecipients), donc ce
+  // que voit le collecteur ici correspond exactement à ce pour quoi il est
+  // notifié.
   loadTodayCollections(): void {
-    // Simuler les collectes du jour
-    this.collectionPoints = [
-      {
-        id: "1",
-        address: "15 Rue de la cité, Azimmo",
-        doorNumber: "15",
-        doorColor: "bleue",
-        wasteTypes: ["Déchets ménagers"],
-        scheduledTime: new Date("2024-01-15T09:00:00"),
-        status: CollectionStatus.SCHEDULED,
-        clientName: "GUIGMA W Paulin",
-        priority: "normal",
-        estimatedDuration: 5,
-        distance: 2.3,
-      },
-      {
-        id: "2",
-        address: "32 Avenue de la Liberté, Quartier Gargin",
-        doorNumber: "32",
-        doorColor: "rouge",
-        wasteTypes: ["Recyclables"],
-        scheduledTime: new Date("2024-01-15T09:30:00"),
-        status: CollectionStatus.SCHEDULED,
-        clientName: "SANFO Adama",
-        priority: "urgent",
-        estimatedDuration: 8,
-        distance: 1.8,
-      },
-      {
-        id: "3",
-        address: "7 Place du Marché, Centre-ville",
-        doorNumber: "7",
-        wasteTypes: ["Déchets organiques"],
-        scheduledTime: new Date("2024-01-15T10:00:00"),
-        status: CollectionStatus.COMPLETED,
-        clientName: "Tolo Bernard",
-        priority: "normal",
-        estimatedDuration: 6,
-        distance: 0.9,
-      },
-    ];
+    const collectorId = (this.currentUser as any)?._id;
+    if (!collectorId) return;
 
-    this.totalCollections = this.collectionPoints.length;
-    this.completedCollections = this.collectionPoints.filter(
-      (p) => p.status === CollectionStatus.COMPLETED
-    ).length;
-    this.currentCollection =
-      this.collectionPoints.find(
-        (p) => p.status !== CollectionStatus.COMPLETED
-      ) || null;
+    this.isLoadingCollections = true;
+    this.collectorPlanningService.getTodayCollectes(collectorId).subscribe({
+      next: (data) => {
+        const points: CollectionPoint[] = [];
+        for (const planning of data.plannings) {
+          for (const collecte of planning.collectes) {
+            points.push(this.mapToCollectionPoint(planning, collecte));
+          }
+        }
+        this.collectionPoints = points;
+        this.totalCollections = points.length;
+        this.completedCollections = points.filter(
+          (p) => p.status === CollectionStatus.COMPLETED
+        ).length;
+        this.currentCollection =
+          points.find((p) => p.status !== CollectionStatus.COMPLETED) || null;
+
+        this.recentHistory = points
+          .filter((p) => p.status === CollectionStatus.COMPLETED)
+          .map((p) => ({
+            id: p.id,
+            clientName: p.clientName,
+            address: p.address,
+            collectedDate: new Date(),
+            wasteTypes: p.wasteTypes,
+          }));
+
+        this.initializeRouteOptimization();
+        this.isLoadingCollections = false;
+      },
+      error: () => {
+        this.notificationService.showInfo(
+          "Info",
+          "Impossible de charger les collectes du jour pour le moment."
+        );
+        this.isLoadingCollections = false;
+      },
+    });
   }
 
-  loadTodayIncidents(): void {
-    this.todayIncidents = [
-      {
-        id: "1",
-        collectionId: "1",
-        type: "non_compliant",
-        description: "Déchets non triés correctement",
-        timestamp: new Date("2024-01-15T08:30:00"),
-        location: { latitude: 48.8566, longitude: 2.3522 },
-        status: "open",
-      },
-    ];
-  }
+  private mapToCollectionPoint(
+    planning: CollectorPlanning,
+    c: CollectorCollecte
+  ): CollectionPoint {
+    const addr = c.serviceLocation?.address || c.client?.address || {};
+    const clientName = c.client
+      ? `${c.client.firstName ?? ""} ${c.client.lastName ?? ""}`.trim()
+      : "Client";
+    const dateStr = (planning.date || "").toString().slice(0, 10);
 
-  loadRecentHistory(): void {
-    this.recentHistory = [
-      {
-        id: "1",
-        clientName: "YARO Juste",
-        address: "25 Rue de la Paix",
-        collectedDate: new Date("2024-01-14T14:30:00"),
-        wasteTypes: ["Déchets ménagers"],
-      },
-      {
-        id: "2",
-        clientName: "Djiguemde Fahouziatou",
-        address: "18 Boulevard Charles De GAULLE",
-        collectedDate: new Date("2024-01-14T15:15:00"),
-        wasteTypes: ["Recyclables", "Verre"],
-      },
-    ];
+    return {
+      id: c.collecteId,
+      clientId: c.client?._id || "",
+      serviceLocationId: c.serviceLocation?._id || null,
+      neighborhood: addr?.neighborhood || "",
+      address: [addr?.doorNumber, addr?.street, addr?.neighborhood, addr?.city]
+        .filter(Boolean)
+        .join(", "),
+      doorNumber: addr?.doorNumber || "",
+      doorColor: addr?.doorColor,
+      wasteTypes: c.wasteType ? [c.wasteType] : [],
+      scheduledTime: dateStr
+        ? new Date(`${dateStr}T${planning.startTime || "08:00"}`)
+        : new Date(),
+      // Le statut 'Completed' n'existe pas réellement sur Collecte (voir
+      // models/Collecte.js) — c'est le libellé déjà utilisé par CE template
+      // (collector-dashboard.html) pour l'état "fait" ; 'Collected' (le vrai
+      // statut backend) y est mappé pour réutiliser le même style existant.
+      status:
+        c.status === "Collected"
+          ? CollectionStatus.COMPLETED
+          : c.status === "Scheduled"
+          ? CollectionStatus.SCHEDULED
+          : (c.status as CollectionStatus),
+      clientName,
+      priority: "normal",
+      estimatedDuration: 5,
+      raw: c,
+    };
   }
 
   initializeRouteOptimization(): void {
     this.routeOptimization = {
-      totalDistance: 15.2,
-      estimatedDuration: 180,
+      totalDistance: 0,
+      estimatedDuration: this.collectionPoints.reduce(
+        (sum, p) => sum + p.estimatedDuration,
+        0
+      ),
       optimizedOrder: this.collectionPoints.map((p) => p.id),
       currentPosition: 0,
     };
 
-    this.currentDestination = {
-      address: this.collectionPoints[0]?.address,
-      distance: this.collectionPoints[0]?.distance,
-      estimatedDuration: this.collectionPoints[0]?.estimatedDuration,
-    };
+    this.currentDestination = this.collectionPoints[0]
+      ? {
+          address: this.collectionPoints[0].address,
+          distance: this.collectionPoints[0].distance,
+          estimatedDuration: this.collectionPoints[0].estimatedDuration,
+        }
+      : null;
   }
 
   // Actions principales
@@ -276,7 +312,9 @@ export class CollectorDashboard  implements OnInit {
     );
   }
 
-  // Confirmation de collecte
+  // Confirmation de collecte — bascule localement en "en cours" pendant que
+  // le collecteur saisit notes/photos ; la validation RÉELLE (celle qui
+  // modifie la Collecte en base) n'a lieu qu'à confirmCurrentCollection().
   confirmCollection(pointId: string): void {
     const point = this.collectionPoints.find((p) => p.id === pointId);
     if (point) {
@@ -285,26 +323,68 @@ export class CollectorDashboard  implements OnInit {
     }
   }
 
+  // Point d'entrée UNIQUE de validation réelle d'une collecte — appelé à la
+  // fois par le bouton "Confirmer la collecte" (sans QR, collecte déjà
+  // sélectionnée via confirmCollection) ET par le bouton "Confirmer" de la
+  // fenêtre de scan QR (pendingScanPayload déjà rempli par onQrCodeResult).
+  // Les deux chemins appellent la MÊME route backend (POST /api/collecte/scan,
+  // services/qrValidation.js) — sans scan réel, on reconstruit le format
+  // historique "par compte" ({code, id, name}) à partir des données déjà
+  // chargées pour cette collecte, que le backend revalide intégralement
+  // (jamais une confiance aveugle dans ce que le frontend envoie).
   confirmCurrentCollection(): void {
-    if (this.currentCollection) {
-      this.currentCollection.status = CollectionStatus.COMPLETED;
-      this.currentCollection.notes = this.collectionNotes;
-      this.currentCollection.photos = this.selectedPhotos.map((p) => p.preview);
+    if (!this.currentCollection) return;
 
-      this.completedCollections++;
-      this.collectionNotes = "";
-      this.selectedPhotos = [];
-
-      // Passer à la collecte suivante
-      this.currentCollection =
-        this.collectionPoints.find(
-          (p) => p.status === CollectionStatus.SCHEDULED
-        ) || null;
-
-      this.notificationService.showSuccess(
-        "Collecte confirmée",
-        "Collecte enregistrée avec succès"
+    const payload =
+      this.pendingScanPayload ?? this.buildAccountScanPayload(this.currentCollection);
+    if (!payload) {
+      this.notificationService.showInfo(
+        "Info",
+        "Informations insuffisantes pour valider cette collecte (nom/quartier manquant)."
       );
+      return;
+    }
+
+    this.collectorPlanningService.scanCollecte(payload).subscribe({
+      next: () => {
+        this.notificationService.showSuccess(
+          "Collecte confirmée",
+          "Collecte enregistrée avec succès"
+        );
+        this.collectionNotes = "";
+        this.selectedPhotos = [];
+        this.pendingScanPayload = null;
+        this.showClientModal = false;
+        this.scannedClient = null;
+        this.lastQrResult = null;
+        this.loadTodayCollections();
+      },
+      error: (err) => {
+        this.notificationService.showError("Erreur", this.describeScanError(err));
+      },
+    });
+  }
+
+  private buildAccountScanPayload(point: CollectionPoint): ScanByAccountPayload | null {
+    if (!point.clientId || !point.neighborhood || !point.clientName) return null;
+    return { code: point.neighborhood, id: point.clientId, name: point.clientName };
+  }
+
+  private describeScanError(err: any): string {
+    const code = err?.error?.code;
+    switch (code) {
+      case "AMBIGUOUS_COLLECTE":
+        return "Plusieurs collectes correspondent à ce client aujourd'hui — désambiguïsation impossible.";
+      case "COLLECTE_NOT_SCHEDULABLE":
+        return "Cette collecte n'est plus programmée (déjà traitée ou annulée).";
+      case "COLLECTE_NOT_ASSIGNED":
+        return "Cette collecte n'est affectée à aucun collecteur/équipe.";
+      case "UNAUTHORIZED_COLLECTE_ACCESS":
+        return "Cette collecte ne vous est pas affectée.";
+      case "NOT_FOUND":
+        return "Aucune collecte programmée trouvée pour aujourd'hui.";
+      default:
+        return err?.error?.message || "Impossible de valider cette collecte pour le moment.";
     }
   }
 
@@ -347,34 +427,65 @@ export class CollectorDashboard  implements OnInit {
     this.selectedPhotos = this.selectedPhotos.filter((p) => p !== photo);
   }
 
-  // Gestion des incidents
+  // Gestion des incidents — persiste réellement via POST /api/signalements
+  // (services/signalement.service.js) au lieu de ne garder l'incident qu'en
+  // mémoire locale. Les photos prises restent pour l'instant un aperçu local
+  // uniquement : aucune route d'upload générique n'existe côté backend pour
+  // les signalements (seule routes/planning.js::POST /:id/incidents a un
+  // multer déjà branché, pour un besoin différent) — à ajouter séparément si
+  // besoin, plutôt que d'envoyer des data URL brutes dans le JSON.
   submitIncident(): void {
     if (
-      this.incidentData.type &&
-      this.incidentData.collectionId &&
-      this.incidentData.description
+      !(
+        this.incidentData.type &&
+        this.incidentData.collectionId &&
+        this.incidentData.description
+      )
     ) {
-      const newIncident: IncidentReport = {
-        id: Math.random().toString(36).substr(2, 9),
-        collectionId: this.incidentData.collectionId,
-        type: this.incidentData.type as any,
-        description: this.incidentData.description,
-        photos: this.incidentPhotos.map((p) => p.preview),
-        timestamp: new Date(),
-        location: { latitude: 48.8566, longitude: 2.3522 },
-        status: "open",
-      };
-
-      this.todayIncidents.push(newIncident);
-      this.showIncidentModal = false;
-      this.incidentData = { type: "", collectionId: "", description: "" };
-      this.incidentPhotos = [];
-
-      this.notificationService.showSuccess(
-        "Incident signalé",
-        "Votre signalement a été transmis"
-      );
+      return;
     }
+
+    const signalementType =
+      INCIDENT_TYPE_TO_SIGNALEMENT_TYPE[this.incidentData.type] ?? "other";
+
+    this.collectorPlanningService
+      .createSignalement({
+        collecteId: this.incidentData.collectionId,
+        type: signalementType,
+        severity: "medium",
+        description: this.incidentData.description,
+        comment: this.incidentData.description,
+      })
+      .subscribe({
+        next: (res) => {
+          const newIncident: IncidentReport = {
+            id: res?.data?._id || Math.random().toString(36).substr(2, 9),
+            collectionId: this.incidentData.collectionId,
+            type: this.incidentData.type as any,
+            description: this.incidentData.description,
+            photos: this.incidentPhotos.map((p) => p.preview),
+            timestamp: new Date(),
+            location: { latitude: 0, longitude: 0 },
+            status: "open",
+          };
+
+          this.todayIncidents.push(newIncident);
+          this.showIncidentModal = false;
+          this.incidentData = { type: "", collectionId: "", description: "" };
+          this.incidentPhotos = [];
+
+          this.notificationService.showSuccess(
+            "Incident signalé",
+            "Votre signalement a été transmis"
+          );
+        },
+        error: () => {
+          this.notificationService.showError(
+            "Erreur",
+            "Impossible d'envoyer le signalement pour le moment."
+          );
+        },
+      });
   }
 
   onIncidentPhotosSelected(event: any): void {
@@ -395,6 +506,9 @@ export class CollectorDashboard  implements OnInit {
     this.incidentPhotos = this.incidentPhotos.filter((p) => p !== photo);
   }
 
+  // Résolution locale uniquement (vue du collecteur sur SES PROPRES
+  // signalements) — la résolution faisant foi (agence) reste gérée via
+  // pages/shared_pages/signalement, jamais dupliquée ici.
   resolveIncident(incidentId: string): void {
     const incident = this.todayIncidents.find((i) => i.id === incidentId);
     if (incident) {
@@ -426,36 +540,85 @@ export class CollectorDashboard  implements OnInit {
     return texts[type as keyof typeof texts] || type;
   }
 
+  // Scan QR — deux formats réels possibles (services/serviceLocation.js::
+  // getServiceLocationQrCode et services/auth.js::genereateQRCodeForUser),
+  // toujours du JSON, jamais une URL (l'ancien déclenchement de test avec une
+  // fausse URL projectwise.onrender.com a été retiré de ngOnInit). N'appelle
+  // PAS le backend tout de suite : prépare le payload + un aperçu, la
+  // validation réelle n'a lieu qu'au clic sur "Confirmer"
+  // (confirmCurrentCollection), pour laisser le collecteur vérifier qu'il
+  // scanne le bon client avant d'agir.
   onQrCodeResult(result: string) {
-    // S'assurer que nous avons bien une chaîne
-    const qrCodeValue = result ?? "";
+    this.showQrScanner = false;
+    this.lastQrResult = result;
 
-    // Extraire l'ID de l'URL si c'est une URL complète
-    let clientId = qrCodeValue;
-    if (qrCodeValue.includes("/api/collecte/scan?id=")) {
-      const urlParams = new URLSearchParams(qrCodeValue.split("?")[1]);
-      clientId = urlParams.get("id") || qrCodeValue;
+    let parsed: any;
+    try {
+      parsed = JSON.parse(result);
+    } catch {
+      this.notificationService.showInfo(
+        "QR invalide",
+        "Ce code ne correspond pas à un QR ZéroDéchet+."
+      );
+      return;
     }
 
-    this.lastQrResult = clientId;
-    this.showQrScanner = false;
-    this.notificationService.showSuccess("QR Code détecté", clientId);
-    // Appel API pour récupérer le client
-    this.clientService.getClientById(clientId).subscribe({
-      next: (client) => {
-        this.scannedClient = client?.data;
-        console.log("Scanned client :>", this.scannedClient);
-        if (this.scannedClient) {
-          this.showClientModal = true;
-        }
+    if (parsed?.serviceLocationId && parsed?.qrToken) {
+      this.pendingScanPayload = {
+        serviceLocationId: parsed.serviceLocationId,
+        qrToken: parsed.qrToken,
+      };
+      const match = this.collectionPoints.find(
+        (p) => p.serviceLocationId === parsed.serviceLocationId
+      );
+      this.scannedClient = match
+        ? this.toScannedClientPreview(match)
+        : { firstName: "Lieu", lastName: "scanné", address: {} };
+    } else if (parsed?.id && parsed?.code && parsed?.name) {
+      this.pendingScanPayload = {
+        code: parsed.code,
+        id: parsed.id,
+        name: parsed.name,
+      };
+      const match = this.collectionPoints.find((p) => p.clientId === parsed.id);
+      this.scannedClient = match
+        ? this.toScannedClientPreview(match)
+        : { firstName: parsed.name, lastName: "", address: { neighborhood: parsed.code } };
+    } else {
+      this.notificationService.showInfo(
+        "QR invalide",
+        "Format de QR non reconnu."
+      );
+      return;
+    }
+
+    this.currentCollection = this.collectionPoints.find(
+      (p) =>
+        p.clientId === this.pendingScanPayload?.["id" as never] ||
+        p.serviceLocationId === (this.pendingScanPayload as ScanByLocationPayload)?.serviceLocationId
+    ) || this.currentCollection;
+
+    this.showClientModal = true;
+  }
+
+  private toScannedClientPreview(point: CollectionPoint): any {
+    const [firstName, ...rest] = point.clientName.split(" ");
+    return {
+      firstName,
+      lastName: rest.join(" "),
+      phone: point.raw.client?.phone,
+      subscriptionStatus: "actif",
+      address: {
+        doorNumber: point.doorNumber,
+        doorColor: point.doorColor,
+        street: point.raw.serviceLocation?.address?.street,
+        neighborhood: point.neighborhood,
+        city: point.raw.serviceLocation?.address?.city || point.raw.client?.address?.city,
+        arrondissement: point.raw.serviceLocation?.address?.arrondissement,
+        sector: point.raw.serviceLocation?.address?.sector,
+        postalCode: point.raw.serviceLocation?.address?.postalCode,
       },
-      error: () => {
-        this.notificationService.showInfo(
-          "Info",
-          "Aucun client trouvé pour ce QR code."
-        );
-      },
-    });
+    };
   }
 
   // Méthode helper pour extraire une string de l'événement
@@ -464,12 +627,12 @@ export class CollectorDashboard  implements OnInit {
     if (typeof event === 'string') {
       return event;
     }
-    
+
     // Si c'est un objet avec une propriété text ou data
     if (event && typeof event === 'object') {
       return event.text || event.data || event.toString() || '';
     }
-    
+
     // Sinon, on convertit en string
     return event?.toString() || '';
   }
@@ -520,6 +683,7 @@ export class CollectorDashboard  implements OnInit {
     this.showClientModal = false;
     this.scannedClient = null;
     this.lastQrResult = null;
+    this.pendingScanPayload = null;
     this.notificationService.showInfo("Annulé", "Collecte annulée");
   }
 
@@ -586,7 +750,7 @@ export class CollectorDashboard  implements OnInit {
   onScanError(error: any): void {
     console.error('Erreur de scan:', error);
     this.cameraError = true;
-    
+
     if (error.name === 'NotReadableError' || error.name === 'NotAllowedError') {
       this.cameraErrorMessage = 'Permission de caméra refusée. Veuillez autoriser l\'accès à la caméra dans les paramètres de votre navigateur.';
     } else if (error.name === 'NotFoundError') {
@@ -594,14 +758,14 @@ export class CollectorDashboard  implements OnInit {
     } else {
       this.cameraErrorMessage = 'Erreur d\'accès à la caméra. Veuillez réessayer ou utiliser l\'import d\'image.';
     }
-    
+
     this.notificationService.showInfo('Info Caméra', this.cameraErrorMessage);
   }
 
   onCamerasFound(cameras: any[]): void {
     this.availableCameras = cameras;
     console.log('Caméras disponibles:', cameras);
-    
+
     if (cameras.length === 0) {
       this.cameraError = true;
       this.cameraErrorMessage = 'Aucune caméra détectée sur cet appareil.';
@@ -612,13 +776,13 @@ export class CollectorDashboard  implements OnInit {
   retryCamera(): void {
     this.cameraError = false;
     this.cameraErrorMessage = '';
-    
+
     // Réinitialiser le scanner
     this.showQrScanner = false;
     setTimeout(() => {
       this.showQrScanner = true;
     }, 100);
-    
+
     this.notificationService.showInfo('Info', 'Tentative de reconnexion à la caméra...');
   }
 
@@ -653,7 +817,7 @@ export class CollectorDashboard  implements OnInit {
       this.cameraError = false;
       this.cameraErrorMessage = '';
       this.showQrScanner = true;
-      
+
     } catch (error) {
       console.error('Erreur lors de l\'ouverture du scanner:', error);
       this.notificationService.showInfo(

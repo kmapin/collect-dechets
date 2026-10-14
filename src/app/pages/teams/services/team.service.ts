@@ -4,6 +4,7 @@ import { Observable, forkJoin, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { Webstockets, SocketNotification } from '../../../core/services/webstockets';
 import {
   Team, TeamStats, TeamFilter,
   TeamMember, AvailableVehicle, AvailableZone, AssignedZone, Vehicle,
@@ -21,6 +22,20 @@ const TEAM_COLORS = ['#3b82f6','#16a34a','#f59e0b','#8b5cf6','#ef4444','#06b6d4'
 export class TeamService {
   private http = inject(HttpClient);
   private api  = environment.apiUrl;
+  private websocketService = inject(Webstockets);
+
+  constructor() {
+    // TEMPS-REEL-WEBSOCKET.md §4 (Transverse) — centralisé ici plutôt que
+    // dupliqué dans team-list.ts/team-availability.ts : les deux pages lisent
+    // déjà le même signal `teams`, donc un seul abonnement suffit à les tenir
+    // à jour quand un autre manager de l'agence modifie une disponibilité
+    // (controllers/teamV2.js::changerDisponibiliteMembre, notifyUsers réutilisé).
+    this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'Equipe') {
+        this.loadTeams();
+      }
+    });
+  }
 
   // ── Auth helpers ─────────────────────────────────────────────
   get agencyId(): string {

@@ -1,9 +1,10 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
+import { Observable, catchError, concatMap, forkJoin, from, map, of, Subscription, toArray } from 'rxjs';
+import { Webstockets, SocketNotification } from '../../../../../core/services/webstockets';
 import { aLaPermission, Agent, Page, PaiementAgent, PaiementAgentActionable, PaiementAgentDetail, Role } from '../../models';
 import { AGENT_DATA_SERVICE } from '../../data-access/tokens/agent-data.token';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
@@ -62,12 +63,14 @@ interface ResultatAction {
   templateUrl: './agent-payment.component.html',
   styleUrl: './agent-payment.component.scss',
 })
-export class AgentPaymentComponent {
+export class AgentPaymentComponent implements OnInit, OnDestroy {
   private readonly agentData = inject(AGENT_DATA_SERVICE);
   private readonly authService = inject(AuthService);
   private readonly session = inject(SESSION_SERVICE);
   private readonly notificationService = inject(NotificationService);
   private readonly exportService = inject(EXPORT_SERVICE);
+  private readonly websocketService = inject(Webstockets);
+  private paiementAgentSub?: Subscription;
 
   private readonly utilisateurFinance = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
   readonly estValidateur = computed(
@@ -315,6 +318,23 @@ export class AgentPaymentComponent {
   constructor() {
     this.chargerAgents();
     this.rafraichirListes();
+  }
+
+  ngOnInit(): void {
+    // TEMPS-REEL-WEBSOCKET.md §4 (Admin/Finance) — jusqu'ici aucun
+    // rafraîchissement automatique n'existait (seul le bouton "Vérifier le
+    // statut" par ligne re-synchronisait manuellement). services/paiementAgent.js
+    // notifie désormais aussi le reste du personnel finance de l'agence sur
+    // chaque transition (création, validation, rejet, résolution manuelle).
+    this.paiementAgentSub = this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'PaiementAgent') {
+        this.rafraichirListes();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.paiementAgentSub?.unsubscribe();
   }
 
   passerAConfirmation(): void {

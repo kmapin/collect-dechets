@@ -6,6 +6,7 @@ import { environment } from '../../../../../../environments/environment';
 import { FinancePermission, Role, Utilisateur } from '../../models';
 import { SessionService, SessionUtilisateur } from '../contracts/session.service';
 import { mapSessionUtilisateurDto, mapUtilisateurDto } from './mappers/session.mapper';
+import { Webstockets, SocketNotification } from '../../../../../core/services/webstockets';
 
 const ROLE_TO_BACKEND: Record<Role, 'comptable' | 'manager_terrain' | 'administrateur'> = {
   [Role.COMPTABLE]: 'comptable',
@@ -23,12 +24,31 @@ export class SessionHttpService implements SessionService {
     filter((u): u is SessionUtilisateur => u !== null),
   );
 
+  private readonly websocketService = inject(Webstockets);
+
   constructor() {
     // GET /finance/session/moi — session réelle chargée une fois au démarrage du module.
     this.http
       .get<unknown>(`${this.base}/moi`)
       .pipe(map(mapSessionUtilisateurDto))
       .subscribe(utilisateur => this._currentUser$.next(utilisateur));
+
+    // TEMPS-REEL-WEBSOCKET.md §4 (Admin/Finance) — enjeu sécurité : si un autre
+    // administrateur modifie les droits financiers de CET utilisateur pendant
+    // que sa session est active (ex. autre onglet/poste), ses droits en mémoire
+    // (`_currentUser$`, chargés une seule fois au bootstrap) doivent se
+    // resynchroniser sans attendre une action locale (controllers/financeUsers.js::
+    // setPermissions, notifyUsers réutilisé). Le canal socket ne livre cet
+    // événement qu'au destinataire réel (room = son propre userId) : pas besoin
+    // de revérifier l'identité ici.
+    this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'DroitsFinance') {
+        this.http
+          .get<unknown>(`${this.base}/moi`)
+          .pipe(map(mapSessionUtilisateurDto))
+          .subscribe(utilisateur => this._currentUser$.next(utilisateur));
+      }
+    });
   }
 
   getCurrentUser(): SessionUtilisateur {

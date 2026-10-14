@@ -1,8 +1,29 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Conversation, Message, User, TypingIndicator } from '../models/chat.models';
-import { Webstockets, SocketMessage } from '../core/services/webstockets';
+import { Conversation, Message, User, UserRole, TypingIndicator } from '../models/chat.models';
+import { Webstockets } from '../core/services/webstockets';
+import { ConversationService, RealtimeMessage } from './conversation.service';
+import { AuthService } from './auth.service';
 
+function mapRole(role?: string): UserRole {
+  if (role === 'super_admin') return 'admin';
+  if (role === 'manager' || role === 'collector' || role === 'municipality') return 'agent';
+  return 'citizen';
+}
+
+/**
+ * TEMPS-REEL-WEBSOCKET.md §3 (Fondation) — remplace le mock (conversations/
+ * messages codés en dur, `sendMessage()` purement local) par les vraies
+ * routes `/api/messages/*` (via ConversationService, déjà utilisé par
+ * client-dashboard.ts/agency-dashboard.ts pour leur mini-widget) et le vrai
+ * canal socket. Il n'existe pas d'entité "Conversation" côté backend — une
+ * conversation EST la paire (utilisateur courant, interlocuteur), donc
+ * `Conversation.id` est toujours l'id de l'interlocuteur, jamais un id dédié.
+ *
+ * Contrat public (Observables + méthodes) inchangé pour ne pas toucher aux
+ * composants `pages/chat/*` (purement présentationnels, pilotés par ce
+ * service) — seule l'implémentation interne passe du mock au réel.
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -17,365 +38,202 @@ export class ChatService {
   messages$ = this.messagesSubject.asObservable();
   typingIndicators$ = this.typingIndicatorsSubject.asObservable();
 
-  private currentUser: User = {
-    id: 'user-1',
-    username: 'John Citizen',
-    role: 'citizen',
-    avatar_url: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100',
-    status: 'online',
-    created_at: new Date(),
-    updated_at: new Date()
-  };
+  private readonly authService = inject(AuthService);
+  private readonly conversationService = inject(ConversationService);
+  private readonly websocketService = inject(Webstockets);
 
-  private mockUsers: User[] = [
-    this.currentUser,
-    {
-      id: 'user-2',
-      username: 'Sarah Agent',
-      role: 'agent',
-      avatar_url: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100',
-      status: 'online',
-      created_at: new Date(),
-      updated_at: new Date()
-    },
-    {
-      id: 'user-3',
-      username: 'Mike Admin',
-      role: 'admin',
-      avatar_url: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100',
-      status: 'offline',
-      created_at: new Date(),
-      updated_at: new Date()
-    },
-    {
-      id: 'user-4',
-      username: 'Emma Agent',
-      role: 'agent',
-      avatar_url: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=100',
-      status: 'online',
-      created_at: new Date(),
-      updated_at: new Date()
-    }
-  ];
+  private readonly currentUser: User = this.buildCurrentUser();
 
-  constructor(private websocketService: Webstockets) {
-    this.initializeMockData();
+  // Source de vérité complète (non filtrée) — `conversationsSubject` peut
+  // refléter un filtre de recherche actif, voir searchConversations().
+  private allConversations: Conversation[] = [];
+
+  constructor() {
+    this.loadConversations();
     this.setupWebSocketListeners();
   }
 
-  private setupWebSocketListeners(): void {
-    // Écouter les nouveaux messages
-    this.websocketService.onMessageSent().subscribe((socketMessage: SocketMessage) => {
-      console.log('💬 Nouveau message reçu via WebSocket:', socketMessage);
-      
-      // Convertir le message socket en Message de l'application
-      const newMessage = this.convertSocketMessageToMessage(socketMessage);
-      
-      // Ajouter le message si nous sommes dans la conversation
-      const currentConv = this.selectedConversationSubject.value;
-      if (currentConv && currentConv.id === socketMessage.conversation_id) {
-        const currentMessages = this.messagesSubject.value;
-        this.messagesSubject.next([...currentMessages, newMessage]);
-      }
-      
-      // Mettre à jour la liste des conversations
-      this.updateConversationWithNewMessage(newMessage);
-    });
-
-    // Écouter les messages lus
-    this.websocketService.onMessageRead().subscribe((socketMessage: SocketMessage) => {
-      console.log('👁️ Message lu via WebSocket:', socketMessage);
-      
-      // Mettre à jour le statut du message dans la liste actuelle
-      const currentMessages = this.messagesSubject.value;
-      const updatedMessages = currentMessages.map(msg =>
-        msg.id === socketMessage._id ? { ...msg, read: true } : msg
-      );
-      this.messagesSubject.next(updatedMessages);
-    });
-
-    // Écouter les messages supprimés
-    this.websocketService.onMessageDeleted().subscribe(({ messageId }) => {
-      console.log(' Message supprimé via WebSocket:', messageId);
-      
-      // Retirer le message de la liste
-      const currentMessages = this.messagesSubject.value;
-      const filteredMessages = currentMessages.filter(msg => msg.id !== messageId);
-      this.messagesSubject.next(filteredMessages);
-    });
-  }
-
-  private convertSocketMessageToMessage(socketMessage: SocketMessage): Message {
-    // Trouver le sender depuis mockUsers ou créer un utilisateur temporaire
-    const sender = this.mockUsers.find(u => u.id === socketMessage.sender_id) || {
-      id: socketMessage.sender_id,
-      username: 'Unknown User',
-      role: 'citizen' as const,
-      status: 'online' as const,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-
+  private buildCurrentUser(): User {
+    const user = this.authService.getCurrentUser();
+    const id = String((user as any)?._id ?? (user as any)?.id ?? '');
+    const username = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || user?.email || 'Moi';
     return {
-      id: socketMessage._id,
-      conversation_id: socketMessage.conversation_id,
-      sender_id: socketMessage.sender_id,
-      sender: sender,
-      content: socketMessage.content,
-      read: socketMessage.read,
-      created_at: new Date(socketMessage.created_at),
-      updated_at: new Date(socketMessage.updated_at)
+      id,
+      username,
+      role: mapRole(user?.role),
+      avatar_url: (user as any)?.avatar ?? undefined,
+      status: 'online',
+      created_at: new Date(),
+      updated_at: new Date(),
     };
   }
 
-  private updateConversationWithNewMessage(message: Message): void {
-    const updatedConversations = this.conversationsSubject.value.map(conv =>
-      conv.id === message.conversation_id
-        ? { 
-            ...conv, 
-            lastMessage: message, 
-            updated_at: new Date(),
-            unreadCount: conv.id !== this.selectedConversationSubject.value?.id 
-              ? (conv.unreadCount || 0) + 1 
-              : 0
-          }
-        : conv
-    );
-    this.conversationsSubject.next(updatedConversations);
+  private setupWebSocketListeners(): void {
+    // `Webstockets.onMessageSent()` déclare un type `SocketMessage` qui ne
+    // correspond PAS au payload réel émis par le backend (voir
+    // conversation.service.ts::onIncomingMessage$, qui fait le même cast) —
+    // le backend émet le document Message brut : sender/receiver/content/
+    // read/createdAt/updatedAt, jamais conversation_id/sender_id/created_at.
+    this.websocketService.onMessageSent().subscribe((raw) => {
+      const payload = raw as unknown as RealtimeMessage;
+      const senderId = this.extractId(payload.sender);
+      const receiverId = this.extractId(payload.receiver);
+      if (senderId !== this.currentUser.id && receiverId !== this.currentUser.id) return;
+      const partnerId = senderId === this.currentUser.id ? receiverId : senderId;
+      const message = this.mapRealtimeMessage(payload, partnerId);
+
+      const currentConv = this.selectedConversationSubject.value;
+      const isOpen = currentConv?.id === partnerId;
+      if (isOpen) {
+        this.messagesSubject.next([...this.messagesSubject.value, message]);
+        if (senderId !== this.currentUser.id) {
+          this.conversationService.markAsRead$(message.id).subscribe();
+        }
+      }
+      this.updateConversationWithNewMessage(message, partnerId, isOpen);
+    });
+
+    this.websocketService.onMessageRead().subscribe((raw) => {
+      const id = (raw as any)?._id ?? (raw as any)?.id;
+      if (!id) return;
+      this.messagesSubject.next(this.messagesSubject.value.map(m => m.id === id ? { ...m, read: true } : m));
+    });
+
+    this.websocketService.onMessageDeleted().subscribe(({ messageId }) => {
+      this.messagesSubject.next(this.messagesSubject.value.filter(m => m.id !== messageId));
+    });
   }
 
-  private initializeMockData(): void {
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+  private extractId(value: any): string {
+    return String((value && typeof value === 'object') ? value._id : value);
+  }
 
-    const mockConversations: Conversation[] = [
-      {
-        id: 'conv-1',
-        participants: [this.currentUser, this.mockUsers[1]],
-        lastMessage: {
-          id: 'msg-1',
-          conversation_id: 'conv-1',
-          sender_id: 'user-2',
-          sender: this.mockUsers[1],
-          content: 'I will be there in 15 minutes to collect the waste.',
-          created_at: new Date(now.getTime() - 5 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 5 * 60 * 1000)
-        },
-        unreadCount: 2,
-        created_at: yesterday,
-        updated_at: new Date(now.getTime() - 5 * 60 * 1000)
+  private loadConversations(): void {
+    if (!this.currentUser.id) return;
+    this.conversationService.getConversationsList$(this.currentUser.id).subscribe({
+      next: (partners) => {
+        this.allConversations = (partners || []).map((p: any) => this.mapPartnerToConversation(p));
+        this.conversationsSubject.next(this.allConversations);
       },
-      {
-        id: 'conv-2',
-        participants: [this.currentUser, this.mockUsers[2]],
-        lastMessage: {
-          id: 'msg-2',
-          conversation_id: 'conv-2',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Thank you for the quick response!',
-          created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 2 * 60 * 60 * 1000)
-        },
-        unreadCount: 0,
-        created_at: twoDaysAgo,
-        updated_at: new Date(now.getTime() - 2 * 60 * 60 * 1000)
+      error: () => {
+        this.allConversations = [];
+        this.conversationsSubject.next([]);
       },
-      {
-        id: 'conv-3',
-        participants: [this.currentUser, this.mockUsers[3]],
-        lastMessage: {
-          id: 'msg-3',
-          conversation_id: 'conv-3',
-          sender_id: 'user-4',
-          sender: this.mockUsers[3],
-          content: 'We have scheduled your pickup for tomorrow morning.',
-          created_at: yesterday,
-          updated_at: yesterday
-        },
-        unreadCount: 0,
-        created_at: twoDaysAgo,
-        updated_at: yesterday
-      }
-    ];
+    });
+  }
 
-    this.conversationsSubject.next(mockConversations);
+  private mapPartnerToUser(partner: any): User {
+    const isAgency = !partner.firstName && !!partner.name;
+    return {
+      id: String(partner._id),
+      username: isAgency
+        ? partner.name
+        : [partner.firstName, partner.lastName].filter(Boolean).join(' ').trim() || partner.email || 'Utilisateur',
+      role: isAgency ? 'agent' : mapRole(partner.role),
+      avatar_url: partner.avatar ?? undefined,
+      status: 'offline',
+      created_at: partner.createdAt ? new Date(partner.createdAt) : new Date(),
+      updated_at: partner.updatedAt ? new Date(partner.updatedAt) : new Date(),
+    };
+  }
+
+  private mapPartnerToConversation(partner: any): Conversation {
+    const partnerUser = this.mapPartnerToUser(partner);
+    return {
+      id: partnerUser.id,
+      participants: [this.currentUser, partnerUser],
+      lastMessage: partner.lastMessage ? this.mapRealtimeMessage(partner.lastMessage, partnerUser.id) : undefined,
+      unreadCount: partner.unreadCount ?? 0,
+      created_at: partner.lastMessageDate ? new Date(partner.lastMessageDate) : new Date(),
+      updated_at: partner.lastMessageDate ? new Date(partner.lastMessageDate) : new Date(),
+    };
+  }
+
+  private mapRealtimeMessage(raw: RealtimeMessage | any, conversationId: string): Message {
+    return {
+      id: String(raw._id),
+      conversation_id: conversationId,
+      sender_id: this.extractId(raw.sender),
+      content: raw.content,
+      read: raw.read,
+      created_at: new Date(raw.createdAt ?? Date.now()),
+      updated_at: new Date(raw.updatedAt ?? raw.createdAt ?? Date.now()),
+    };
+  }
+
+  private updateConversationWithNewMessage(message: Message, partnerId: string, isOpen: boolean): void {
+    const idx = this.allConversations.findIndex(c => c.id === partnerId);
+    if (idx === -1) {
+      // Nouvel interlocuteur jamais vu dans cette session (premier message
+      // d'une conversation inédite) : on ne connaît ni son nom ni son rôle
+      // ici, il faut les récupérer via l'API plutôt que fabriquer un objet
+      // partiel.
+      this.loadConversations();
+      return;
+    }
+    this.allConversations = this.allConversations.map(c => c.id === partnerId
+      ? {
+          ...c,
+          lastMessage: message,
+          updated_at: new Date(),
+          unreadCount: isOpen ? 0 : (c.unreadCount || 0) + (message.sender_id !== this.currentUser.id ? 1 : 0),
+        }
+      : c);
+    this.conversationsSubject.next(this.allConversations);
   }
 
   selectConversation(conversation: Conversation): void {
     this.selectedConversationSubject.next(conversation);
-    this.loadMessagesForConversation(conversation.id);
+    this.loadMessagesForConversation(conversation);
 
-    const updatedConversations = this.conversationsSubject.value.map(conv =>
-      conv.id === conversation.id ? { ...conv, unreadCount: 0 } : conv
-    );
-    this.conversationsSubject.next(updatedConversations);
+    this.allConversations = this.allConversations.map(c => c.id === conversation.id ? { ...c, unreadCount: 0 } : c);
+    this.conversationsSubject.next(this.allConversations);
   }
 
-  private loadMessagesForConversation(conversationId: string): void {
-    const now = new Date();
-    const mockMessages: { [key: string]: Message[] } = {
-      'conv-1': [
-        {
-          id: 'msg-1-1',
-          conversation_id: 'conv-1',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Hello, I need to report a waste collection issue at my address.',
-          created_at: new Date(now.getTime() - 30 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 30 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-2',
-          conversation_id: 'conv-1',
-          sender_id: 'user-2',
-          sender: this.mockUsers[1],
-          content: 'Hello! I\'ll be happy to help. Can you provide more details about the issue?',
-          created_at: new Date(now.getTime() - 28 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 28 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-3',
-          conversation_id: 'conv-1',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'The bins were not collected this morning, and there is overflow.',
-          created_at: new Date(now.getTime() - 25 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 25 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-4',
-          conversation_id: 'conv-1',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Here is a photo of the situation.',
-          attachment_url: 'https://images.pexels.com/photos/3181031/pexels-photo-3181031.jpeg?auto=compress&cs=tinysrgb&w=400',
-          attachment_type: 'photo',
-          created_at: new Date(now.getTime() - 24 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 24 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-5',
-          conversation_id: 'conv-1',
-          sender_id: 'user-2',
-          sender: this.mockUsers[1],
-          content: 'Thank you for the photo. I can see the issue. Let me schedule an immediate pickup for you.',
-          created_at: new Date(now.getTime() - 20 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 20 * 60 * 1000)
-        },
-        {
-          id: 'msg-1-6',
-          conversation_id: 'conv-1',
-          sender_id: 'user-2',
-          sender: this.mockUsers[1],
-          content: 'I will be there in 15 minutes to collect the waste.',
-          created_at: new Date(now.getTime() - 5 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 5 * 60 * 1000)
-        }
-      ],
-      'conv-2': [
-        {
-          id: 'msg-2-1',
-          conversation_id: 'conv-2',
-          sender_id: 'user-2',
-          sender: this.mockUsers[2],
-          content: 'Hello, we noticed your recent report. Is everything resolved?',
-          created_at: new Date(now.getTime() - 3 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 3 * 60 * 60 * 1000)
-        },
-        {
-          id: 'msg-2-2',
-          conversation_id: 'conv-2',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Yes, the collection agent came by and resolved everything. Thank you for the quick response!',
-          created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 2 * 60 * 60 * 1000)
-        }
-      ],
-      'conv-3': [
-        {
-          id: 'msg-3-1',
-          conversation_id: 'conv-3',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'I would like to schedule a bulk waste pickup for next week.',
-          created_at: new Date(now.getTime() - 25 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 25 * 60 * 60 * 1000)
-        },
-        {
-          id: 'msg-3-2',
-          conversation_id: 'conv-3',
-          sender_id: 'user-4',
-          sender: this.mockUsers[3],
-          content: 'Of course! What type of bulk items do you need collected?',
-          created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 24 * 60 * 60 * 1000)
-        },
-        {
-          id: 'msg-3-3',
-          conversation_id: 'conv-3',
-          sender_id: 'user-1',
-          sender: this.currentUser,
-          content: 'Old furniture and some electronics.',
-          created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 24 * 60 * 60 * 1000)
-        },
-        {
-          id: 'msg-3-4',
-          conversation_id: 'conv-3',
-          sender_id: 'user-4',
-          sender: this.mockUsers[3],
-          content: 'We have scheduled your pickup for tomorrow morning.',
-          created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-          updated_at: new Date(now.getTime() - 24 * 60 * 60 * 1000)
-        }
-      ]
-    };
-
-    const messages = mockMessages[conversationId] || [];
-    this.messagesSubject.next(messages);
+  private loadMessagesForConversation(conversation: Conversation): void {
+    this.conversationService.openConversation$(this.currentUser.id, conversation.id).subscribe({
+      next: (raw) => {
+        const messages = (raw || []).map((m: any) => this.mapRealtimeMessage(m, conversation.id));
+        this.messagesSubject.next(messages);
+        messages
+          .filter(m => m.sender_id !== this.currentUser.id && !m.read)
+          .forEach(m => this.conversationService.markAsRead$(m.id).subscribe());
+      },
+      error: () => this.messagesSubject.next([]),
+    });
   }
 
   sendMessage(content: string, attachmentUrl?: string, attachmentType?: 'photo' | 'location'): void {
     const selectedConv = this.selectedConversationSubject.value;
-    if (!selectedConv) return;
+    if (!selectedConv || !content.trim()) return;
 
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      conversation_id: selectedConv.id,
-      sender_id: this.currentUser.id,
-      sender: this.currentUser,
-      content,
-      attachment_url: attachmentUrl,
-      attachment_type: attachmentType,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-
-    const currentMessages = this.messagesSubject.value;
-    this.messagesSubject.next([...currentMessages, newMessage]);
-
-    const updatedConversations = this.conversationsSubject.value.map(conv =>
-      conv.id === selectedConv.id
-        ? { ...conv, lastMessage: newMessage, updated_at: new Date() }
-        : conv
-    );
-    this.conversationsSubject.next(updatedConversations);
+    // Le modèle Message backend (models/Message.js) ne porte pas de champ
+    // pièce jointe — attachmentUrl/attachmentType (hérités du mock) ne sont
+    // donc pas persistés, comportement inchangé pour les appelants actuels
+    // (pages/chat n'envoie jamais d'attachment aujourd'hui).
+    this.conversationService.sendMessage$({
+      sender: this.currentUser.id,
+      receiver: selectedConv.id,
+      content: content.trim(),
+    }).subscribe({
+      next: (saved) => {
+        const message = this.mapRealtimeMessage(saved as unknown as RealtimeMessage, selectedConv.id);
+        this.messagesSubject.next([...this.messagesSubject.value, message]);
+        this.updateConversationWithNewMessage(message, selectedConv.id, true);
+      },
+    });
   }
 
   searchConversations(query: string): void {
     if (!query.trim()) {
-      this.initializeMockData();
+      this.conversationsSubject.next(this.allConversations);
       return;
     }
-
-    const filtered = this.conversationsSubject.value.filter(conv => {
-      const otherParticipant = conv.participants.find(p => p.id !== this.currentUser.id);
-      return otherParticipant?.username.toLowerCase().includes(query.toLowerCase());
+    const q = query.toLowerCase();
+    const filtered = this.allConversations.filter(conv => {
+      const other = conv.participants.find(p => p.id !== this.currentUser.id);
+      return other?.username.toLowerCase().includes(q);
     });
-
     this.conversationsSubject.next(filtered);
   }
 
@@ -383,21 +241,9 @@ export class ChatService {
     return this.currentUser;
   }
 
-  simulateTyping(conversationId: string, userId: string): void {
-    setTimeout(() => {
-      const user = this.mockUsers.find(u => u.id === userId);
-      if (user) {
-        this.typingIndicatorsSubject.next([{
-          conversation_id: conversationId,
-          user_id: userId,
-          username: user.username,
-          is_typing: true
-        }]);
-
-        setTimeout(() => {
-          this.typingIndicatorsSubject.next([]);
-        }, 3000);
-      }
-    }, 1000);
-  }
+  // Pas de diffusion d'un signal "l'autre partie est en train d'écrire" côté
+  // backend/socket aujourd'hui (seul `Webstockets.emitTyping()` existe, en
+  // émission uniquement, rien ne l'écoute) — no-op plutôt que de fabriquer un
+  // faux indicateur comme le faisait le mock.
+  simulateTyping(_conversationId: string, _userId: string): void {}
 }

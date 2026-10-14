@@ -1,6 +1,8 @@
-import { ChangeDetectorRef, Component, OnInit, signal } from "@angular/core";
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, signal } from "@angular/core";
 
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
+import { Subscription } from "rxjs";
+import { Webstockets } from "../../core/services/webstockets";
 import { AgencyService } from "../../services/agency.service";
 import { Agency, Statistics, Tarif } from "../../models/agency.model";
 import { AuthService } from "../../services/auth.service";
@@ -54,7 +56,7 @@ export interface AgencyZone {
   templateUrl: "./agency-details.html",
   styleUrl: "./agency-details.css",
 })
-export class AgencyDetails implements OnInit {
+export class AgencyDetails implements OnInit, OnDestroy {
   readonly toTerritoryOptions = toTerritoryOptions;
 
   userData = {
@@ -264,6 +266,8 @@ export class AgencyDetails implements OnInit {
     pendingReports: 0,
     totalpendingSignalements: 0,
   };
+  private pricingUpdateSub?: Subscription;
+
   constructor(
     private route: ActivatedRoute,
     private territoryService: TerritoryHttpService,
@@ -275,19 +279,39 @@ export class AgencyDetails implements OnInit {
     private adminService: Admin,
         private cdr: ChangeDetectorRef,
     private serviceLocationService: ServiceLocationService,
+    private websocketService: Webstockets,
   ) {
     this.drawerWidth;
     this.loadAgencyDataOnInit();
   }
 
   ngOnInit(): void {
-    
+
     this.currentUser = this.authService.getCurrentUser();
     this.loadAgencyDataOnInit();
     this.checkUserIsLooged();
     this.loadAgenciesFromApi();
     this.cdr.detectChanges();
 
+    // Temps réel pour les visiteurs CONNECTÉS uniquement — cette page est
+    // publique (consultable sans compte), et le socket exige toujours un JWT
+    // (server.js::io.use) : un visiteur non connecté garde le comportement
+    // existant (rechargement manuel). controllers/pricingAgency.js diffuse
+    // désormais `pricingUpdated` vers la room `agency-catalog:<agencyId>`,
+    // rejoignable par tout utilisateur authentifié (pas de lien requis avec
+    // cette agence précise, mêmes données que la route REST déjà publique).
+    if (this.currentUser && this.agencyId) {
+      this.websocketService.joinRoom(`agency-catalog:${this.agencyId}`);
+      this.pricingUpdateSub = this.websocketService.onPricingUpdated().subscribe(({ agencyId }) => {
+        if (agencyId === this.agencyId) {
+          this.loadTariffs(this.agencyId || "");
+        }
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.pricingUpdateSub?.unsubscribe();
   }
 
   checkUserIsLooged() {

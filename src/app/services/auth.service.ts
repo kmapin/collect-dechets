@@ -5,7 +5,7 @@ import { ClientUser, User, UserRole, RegisterUserData, RegisterResponse, UserAdd
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Agency, Municipality } from '../models/agency.model';
-import { Webstockets } from '../core/services/webstockets';
+import { Webstockets, SocketNotification } from '../core/services/webstockets';
 import { normalizePhone } from '../shared/phone.util';
 
 @Injectable({
@@ -41,6 +41,19 @@ export class AuthService {
         this.joinAgencyRoomIfStaff(userData?.user);
       }
     }
+
+    // TEMPS-REEL-WEBSOCKET.md §4 (Admin/Finance) — enjeu sécurité : si un
+    // super_admin modifie les `administrationPermissions` de cet utilisateur
+    // pendant que sa session est active, les gardes qui lisent
+    // `getCurrentUser()` en synchrone (ex. administrationPermissionGuard)
+    // doivent voir le changement sans attendre une reconnexion/relogin. Le
+    // canal socket ne livre cet événement qu'au destinataire réel (room =
+    // son propre userId) : pas besoin de revérifier l'identité ici.
+    this.websocketService.onNewNotification().subscribe((notification: SocketNotification) => {
+      if (notification?.type === 'DroitsAdministration') {
+        this.refreshCurrentUser().subscribe();
+      }
+    });
   }
 
   private joinAgencyRoomIfStaff(user: any): void {
