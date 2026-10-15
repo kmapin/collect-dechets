@@ -50,9 +50,7 @@ export class ServiceUnavailable implements OnInit, OnDestroy {
     this.isChecking = true;
     this.attemptCount += 1;
 
-    const racineApi = environment.apiUrl.replace(/\/api\/?$/, '');
-
-    fetch(`${racineApi}/api-docs.json`, { method: 'GET', cache: 'no-store' })
+    fetch(`${environment.apiRoot}/api-docs.json`, { method: 'GET', cache: 'no-store' })
       .then((res) => {
         this.isChecking = false;
         if (res.ok) {
