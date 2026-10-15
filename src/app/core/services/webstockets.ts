@@ -68,8 +68,11 @@ export class Webstockets {
 
   private initializeSocket(): void {
 
-    // Extraire l'URL de base sans '/api'
-    const socketUrl = environment.apiUrl.replace('/api', '');
+    // Racine du serveur (sans /api) — valeur explicite d'environment.ts,
+    // jamais dérivée de apiUrl par manipulation de chaîne (un `.replace`
+    // cassait silencieusement l'URL dès que le domaine contenait "api"
+    // ailleurs que dans le suffixe, ex. api.zerodechets.sahelys.com).
+    const socketUrl = environment.apiRoot;
 
     this.socket = io(socketUrl, {
       autoConnect: false,
