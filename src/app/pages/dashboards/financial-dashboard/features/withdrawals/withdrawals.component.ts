@@ -11,7 +11,7 @@ import { FINANCE_DATA_SERVICE } from '../../data-access/tokens/finance-data.toke
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { formatMontantXof } from '../../utils/money.util';
 import { formatFrDate } from '../../../../../shared/format.util';
-import { DataTableColumn, DataTableComponent } from '../../shared/data-table/data-table.component';
+import { DataTableBadge, DataTableColumn, DataTableComponent } from '../../shared/data-table/data-table.component';
 import { SearchFilterComponent } from '../../shared/filters/search-filter/search-filter.component';
 import { MonthFilterComponent } from '../../shared/filters/month-filter/month-filter.component';
 import { ResetFiltersButtonComponent } from '../../shared/filters/reset-filters-button/reset-filters-button.component';
@@ -36,11 +36,30 @@ const LIBELLES_STATUT: Record<string, string> = {
   COMPLETED_WITH_ERROR: 'Traité avec erreur',
   FAILED: 'Échoué',
   REJETE: 'Rejeté',
+  A_VERIFIER_MANUELLEMENT: 'À vérifier manuellement',
+};
+
+// Variante de pastille par statut — voir DataTableBadgeVariant (data-table.component.ts).
+// A_VERIFIER_MANUELLEMENT en "danger" : l'opérateur n'a renvoyé aucune réponse, une
+// vérification manuelle est requise avant de considérer le retrait traité.
+const VARIANTES_STATUT: Record<string, DataTableBadge['variant']> = {
+  EN_ATTENTE_VALIDATION: 'warning',
+  INITIATED: 'info',
+  COMPLETED: 'success',
+  COMPLETED_WITH_ERROR: 'warning',
+  FAILED: 'danger',
+  REJETE: 'danger',
+  A_VERIFIER_MANUELLEMENT: 'danger',
 };
 
 function libelleStatut(statut?: string): string {
   if (!statut) return '—';
   return LIBELLES_STATUT[statut] ?? statut;
+}
+
+function badgeStatut(statut?: string): DataTableBadge | null {
+  if (!statut) return null;
+  return { text: libelleStatut(statut), variant: VARIANTES_STATUT[statut] ?? 'neutral' };
 }
 
 //  Historique des retraits de l'agence 
@@ -97,6 +116,11 @@ export class WithdrawalsComponent implements OnInit, OnDestroy {
       key: 'statut',
       label: 'Statut',
       format: r => (r.statut === 'REJETE' && r.motifRejet ? `${libelleStatut(r.statut)} — ${r.motifRejet}` : libelleStatut(r.statut)),
+      badge: r => {
+        const badge = badgeStatut(r.statut);
+        if (!badge) return null;
+        return r.statut === 'REJETE' && r.motifRejet ? { ...badge, text: `${badge.text} — ${r.motifRejet}` } : badge;
+      },
     },
   ];
 

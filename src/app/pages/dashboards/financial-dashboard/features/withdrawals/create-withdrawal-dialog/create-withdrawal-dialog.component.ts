@@ -11,6 +11,7 @@ import { FeeOptionRetrait, OperateurRetrait } from '../../../data-access/contrac
 import { formatMontantXof } from '../../../utils/money.util';
 import { FeeConfigService } from '../../../../../../services/fee-config.service';
 import { ScrollLockDirective } from '../../../../../../shared/scroll-lock.directive';
+import { PhoneInputDirective } from '../../../../../../shared/phone-input.directive';
 
 type Etape = 'formulaire' | 'confirmation';
 
@@ -18,13 +19,15 @@ interface OperateurInfo {
   value: OperateurRetrait;
   label: string;
   disponible: boolean;
+  color: string;
+  image: string;
 }
 
 // Formulaire de création d'un retrait 
 @Component({
   selector: 'app-create-withdrawal-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, ScrollLockDirective],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, ScrollLockDirective, PhoneInputDirective],
   templateUrl: './create-withdrawal-dialog.component.html',
   styleUrl: './create-withdrawal-dialog.component.scss',
 })
@@ -36,10 +39,13 @@ export class CreateWithdrawalDialogComponent {
   
   @Output() ferme = new EventEmitter<boolean>();
 
+  // Mêmes libellés/couleurs/logos que mobile-money-form.ts (page de paiement d'un
+  // abonnement) — cartes cliquables plutôt qu'un <select>, pour une saisie uniforme
+  // partout où un opérateur mobile money est choisi dans l'appli.
   readonly operateurs: OperateurInfo[] = [
-    { value: 'MOOV_MONEY', label: 'Moov Money', disponible: true },
-    { value: 'ORANGE_MONEY', label: 'Orange Money', disponible: true },
-    { value: 'TELECEL_MONEY', label: 'Telecel Money', disponible: true },
+    { value: 'ORANGE_MONEY', label: 'Orange Money', disponible: true, color: '#FF7900', image: 'assets/logoMobileMoney/Orange_Money-Logo.png' },
+    { value: 'MOOV_MONEY', label: 'Moov Money', disponible: true, color: '#009DDC', image: 'assets/logoMobileMoney/logo_moov_money.webp' },
+    { value: 'TELECEL_MONEY', label: 'Telecel Money', disponible: true, color: '#00D9A5', image: 'assets/logoMobileMoney/telecel1024X500.jpg' },
   ];
 
   readonly etape = signal<Etape>('formulaire');
@@ -56,7 +62,10 @@ export class CreateWithdrawalDialogComponent {
     customerMsisdn: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],
     montant: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     motif: ['', Validators.maxLength(200)],
-    feeOption: this.fb.control<FeeOptionRetrait | null>(null, Validators.required),
+    // Défaut 'A' (frais déduits du montant reçu) plutôt que null : un toggle a toujours un
+    // état visible, contrairement aux 2 radios qu'il remplace (qui, elles, démarraient
+    // sans sélection — Validators.required forçait un choix explicite avant validation).
+    feeOption: this.fb.control<FeeOptionRetrait | null>('A', Validators.required),
   });
 
   
@@ -103,6 +112,20 @@ export class CreateWithdrawalDialogComponent {
 
   get fraisActifs(): boolean {
     return !!this.agencyWithdrawalFee()?.enabled;
+  }
+
+  // Toggle "Inclure les frais de plateforme" — correspondance propre avec feeOption
+  // ('A'|'B'), seul contrat conservé côté modèle/API (voir FeeOptionRetrait) :
+  // activé = Option B (frais ajoutés au débit, le bénéficiaire reçoit le montant demandé
+  // en entier) ; désactivé = Option A (frais déduits du montant reçu).
+  get inclureFraisPlateforme(): boolean {
+    return this.form.controls.feeOption.value === 'B';
+  }
+
+  basculerInclureFraisPlateforme(): void {
+    const control = this.form.controls.feeOption;
+    control.setValue(this.inclureFraisPlateforme ? 'A' : 'B');
+    control.markAsTouched();
   }
 
   passerAConfirmation(): void {

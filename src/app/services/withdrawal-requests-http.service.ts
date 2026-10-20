@@ -150,4 +150,22 @@ export class WithdrawalRequestsHttpService {
   confirmerVirementNonEffectue(id: string): Observable<AdminWithdrawalRequest> {
     return this.http.patch<BackendRetraitItem>(`${this.base}/${id}/confirmer-virement-non-effectue`, {}).pipe(map(mapBackendRetrait));
   }
+
+  // ── Telecel Cashin (retraits TELECEL_MONEY uniquement) ──────────
+  // `id` = l'_id du Withdraw (pas le transactionId/reference Telecel) — le backend
+  // récupère le document et en extrait ce qu'il faut pour appeler l'API Telecel.
+
+  /** Lecture seule : interroge Telecel sur le statut réel de la transaction Cashin,
+   * sans modifier le Withdraw en base. Réponse backend non typée ici (forme libre selon
+   * ce que Telecel renvoie) — affichée telle quelle à l'admin côté appelant. */
+  verifierStatutTelecel(id: string): Observable<unknown> {
+    return this.http.get<unknown>(`${this.base}/${id}/telecel/statut`);
+  }
+
+  /** Annule un retrait Telecel au statut COMPLETED (reversal) et recrédite le wallet
+   * agence — utilisée quand une erreur est constatée après coup sur un retrait déjà
+   * validé par l'admin. */
+  annulerRetraitTelecel(id: string): Observable<AdminWithdrawalRequest> {
+    return this.http.patch<BackendRetraitItem>(`${this.base}/${id}/telecel/annuler`, {}).pipe(map(mapBackendRetrait));
+  }
 }

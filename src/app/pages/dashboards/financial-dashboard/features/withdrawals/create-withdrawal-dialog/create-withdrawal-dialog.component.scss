@@ -167,6 +167,224 @@
     color: #b91c1c;
   }
 
+  // Toggle "Inclure les frais de plateforme" — remplace les 2 radios Option A/B. Même
+  // mécanique track+thumb que .active-toggle (team-members.scss), agrandie, avec un
+  // libellé Oui/Non et un bandeau d'explication dont le contenu change selon l'état.
+  .fee-toggle {
+    gap: 0.75rem;
+
+    &__row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 1rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    &__icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: var(--primary-color, #2563eb);
+
+      i { font-size: 22px; }
+    }
+
+    &__text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      strong {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      span {
+        font-size: 0.8rem;
+        color: #64748b;
+      }
+    }
+
+    &__switch {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+
+      input {
+        display: none;
+      }
+    }
+
+    &__track {
+      width: 44px;
+      height: 24px;
+      border-radius: 12px;
+      background: #cbd5e1;
+      position: relative;
+      transition: background 0.2s ease;
+
+    }
+
+    // Règles "checked" écrites avec le nom de classe littéral plutôt que `&` : vu depuis
+    // ce niveau d'imbrication (dans .fee-toggle__track lui-même imbriqué dans .fee-toggle),
+    // `&` se développe en TOUT le chemin ".fin-create-withdrawal .fee-toggle__track" — placé
+    // après un combinateur de fratrie (~), ça produit un sélecteur qui ne matche jamais
+    // (bug constaté : le libellé Oui/Non suivait l'état, pas le rendu visuel du switch).
+    .fee-toggle__switch input:checked ~ .fee-toggle__track {
+      background: var(--primary-color, #2563eb);
+    }
+
+    &__thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      transition: left 0.2s ease;
+    }
+
+    .fee-toggle__switch input:checked ~ .fee-toggle__track .fee-toggle__thumb {
+      left: 22px;
+    }
+
+    &__lbl {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      min-width: 24px;
+    }
+
+    &__banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+
+      i {
+        flex-shrink: 0;
+        font-size: 20px;
+        color: #64748b;
+      }
+
+      strong {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 2px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #64748b;
+        line-height: 1.4;
+      }
+
+      &--active {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+
+        i { color: #16a34a; }
+        strong { color: #166534; }
+        p { color: #166534; }
+      }
+    }
+  }
+
+  // Cartes cliquables (logo + nom) — même présentation que mobile-money-form.scss (page
+  // de paiement d'un abonnement), pour une sélection d'opérateur uniforme dans l'appli.
+  .operators-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .operator-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.85rem;
+    border: 2px solid var(--medium-gray, #e0e0e0);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #fff;
+
+    &:hover {
+      border-color: var(--primary-color, #667eea);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    &.selected {
+      border-color: var(--primary-color, #667eea);
+      background-color: #f5f7ff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+    }
+
+    &.disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+
+      &:hover {
+        border-color: var(--medium-gray, #e0e0e0);
+        transform: none;
+        box-shadow: none;
+      }
+    }
+
+    // 96px plutôt que les 64px de mobile-money-form.scss : les fichiers Orange Money et
+    // Moov Money ont une large marge blanche intégrée à l'image (contrairement à Telecel,
+    // déjà bien cadré) — à object-fit:contain égal, le logo visible reste minuscule tant
+    // que la boîte n'est pas nettement agrandie pour compenser.
+    .operator-icon {
+      width: 100%;
+      height: 96px;
+      border-radius: 10px;
+      border: 1px solid #eee;
+      padding: 4px;
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .operator-logo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .operator-name {
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-align: center;
+      color: #333;
+    }
+  }
+
   &__radio {
     display: flex;
     align-items: flex-start;

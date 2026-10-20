@@ -565,6 +565,12 @@ export class AdminDashboard implements OnInit, OnDestroy {
   virementConfirmMode: 'effectue' | 'non_effectue' | null = null;
   isConfirmingVirement = false;
 
+  // Actions Telecel Cashin (retraits TELECEL_MONEY) — vérification du statut réel
+  // auprès de Telecel et annulation/reversal d'un retrait COMPLETED constaté erroné
+  // après validation admin (voir services/withdrawal-requests-http.service.ts).
+  isCheckingTelecelStatus = false;
+  isCancellingTelecelWithdrawal = false;
+
   // Select agence custom avec scroll infini
   agencyIdFilter       = '';
   agencyDropdownOpen   = false;
@@ -1134,6 +1140,78 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
 
+  // ── Telecel Cashin : vérification de statut + annulation (reversal) ─────
+  // Actions réservées aux retraits paymentMethod === TELECEL_MONEY — voir gate
+  // *ngIf dans le template (peutGererTelecel/peutAnnulerTelecel).
+
+  verifierStatutTelecel(request: AdminWithdrawalRequest): void {
+    this.isCheckingTelecelStatus = true;
+    this.withdrawalRequestsService.verifierStatutTelecel(request.id).subscribe({
+      next: (reponse) => {
+        this.isCheckingTelecelStatus = false;
+        const { message, resultCode } = this.extraireStatutTelecel(reponse);
+        if (resultCode === 0) this.notificationService.showSuccess('Statut Telecel', message);
+        else if (resultCode === null) this.notificationService.showInfo('Statut Telecel', message);
+        else this.notificationService.showWarning('Statut Telecel', message);
+      },
+      error: (err) => {
+        this.isCheckingTelecelStatus = false;
+        this.notificationService.showError('Erreur', err?.error?.message || 'Impossible de récupérer le statut Telecel.');
+      },
+    });
+  }
+
+  // Réponse réelle : { statutTelecel: { transactionId, partnerTransId, resultCode,
+  // isReverseTransaction, errorCode, errorMessage, transactionDate } }. `errorMessage`
+  // est déjà le texte humain renvoyé par Telecel (y compris en cas de succès — "Opération
+  // effectuée avec succès.") ; resultCode 0 = succès (mêmes conventions que les autres
+  // opérateurs, voir services/transaction.js côté backend), tout le reste signalé en
+  // avertissement plutôt qu'en erreur franche (Telecel reste la source de vérité, pas une
+  // panne de CET appel).
+  private extraireStatutTelecel(reponse: unknown): { message: string; resultCode: number | null } {
+    const data = reponse && typeof reponse === 'object' && 'statutTelecel' in (reponse as Record<string, unknown>)
+      ? (reponse as Record<string, unknown>)['statutTelecel']
+      : reponse;
+
+    if (data && typeof data === 'object') {
+      const d = data as Record<string, unknown>;
+      const resultCode = typeof d['resultCode'] === 'number' ? d['resultCode'] : null;
+      const texte = d['errorMessage'] ? String(d['errorMessage']) : null;
+      if (texte) {
+        const details: string[] = [];
+        if (d['transactionDate']) details.push(new Date(String(d['transactionDate'])).toLocaleString('fr-FR'));
+        if (d['transactionId']) details.push(`réf. ${d['transactionId']}`);
+        return { message: details.length ? `${texte} (${details.join(' · ')})` : texte, resultCode };
+      }
+    }
+    return { message: JSON.stringify(reponse), resultCode: null };
+  }
+
+  async annulerRetraitTelecel(request: AdminWithdrawalRequest): Promise<void> {
+    const ok = await this.confirmDialog.confirm({
+      title: 'Annuler ce retrait Telecel ?',
+      message: `Le retrait de ${this.formatXof(request.amount)} vers ${request.walletNumber} sera annulé (reversal) et le wallet de l'agence recrédité.`,
+      detail: "À utiliser uniquement si une erreur est constatée après validation admin — l'opération est irréversible côté Telecel.",
+      variant: 'danger',
+      confirmLabel: 'Annuler le retrait',
+    });
+    if (!ok) return;
+
+    this.isCancellingTelecelWithdrawal = true;
+    this.withdrawalRequestsService.annulerRetraitTelecel(request.id).subscribe({
+      next: () => {
+        this.isCancellingTelecelWithdrawal = false;
+        this.notificationService.showSuccess('Retrait annulé', 'Le retrait Telecel a été annulé et le wallet agence recrédité.');
+        this.loadWithdrawalRequests();
+        if (this.visibleWithdrawalDetailDrawer) this.viewWithdrawalDetails(request.id);
+      },
+      error: (err) => {
+        this.isCancellingTelecelWithdrawal = false;
+        this.notificationService.showError('Erreur', err?.error?.message || "Impossible d'annuler ce retrait.");
+      },
+    });
+  }
+
   // ── Présentation ──────────────────────────────────────────────
 
   // Table explicite (pas de dérivation `.toLowerCase()` sur la valeur de l'enum) :
@@ -1178,6 +1256,20 @@ export class AdminDashboard implements OnInit, OnDestroy {
       [PaymentMethod.TELECEL_MONEY]: 'Telecel Money',
     };
     return labels[method] ?? method;
+  }
+
+  // Gates des actions Telecel Cashin (drawer détail retrait) — "vérifier le statut"
+  // dès que la demande a été envoyée à Telecel (donc jamais en PENDING/REJECTED, qui
+  // n'ont jamais atteint l'opérateur) ; "annuler" uniquement sur un retrait COMPLETED
+  // (seul statut où le reversal Telecel a un sens — voir docs backend).
+  peutVerifierStatutTelecel(request: AdminWithdrawalRequest): boolean {
+    return request.paymentMethod === PaymentMethod.TELECEL_MONEY
+      && request.status !== WithdrawalStatus.PENDING
+      && request.status !== WithdrawalStatus.REJECTED;
+  }
+
+  peutAnnulerRetraitTelecel(request: AdminWithdrawalRequest): boolean {
+    return request.paymentMethod === PaymentMethod.TELECEL_MONEY && request.status === WithdrawalStatus.PAID;
   }
 
   formatXof(amount: number | undefined | null): string {

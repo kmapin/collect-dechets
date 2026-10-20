@@ -2,7 +2,9 @@
   @for (notification of notifications; track notification) {
     <div
       class="notification fade-in"
-      [class]="'notification-' + notification.type">
+      [class]="'notification-' + notification.type"
+      (mouseenter)="pauseMinuteur(notification.id)"
+      (mouseleave)="reprendreMinuteur(notification.id)">
       <div class="notification-icon">
         <i class="material-icons">{{ getIcon(notification.type) }}</i>
       </div>

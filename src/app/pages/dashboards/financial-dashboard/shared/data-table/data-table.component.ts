@@ -1,12 +1,22 @@
 import { Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+export type DataTableBadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+
+export interface DataTableBadge {
+  text: string;
+  variant: DataTableBadgeVariant;
+}
+
 export interface DataTableColumn<T> {
   key: keyof T;
   label: string;
   align?: 'left' | 'right';
   sortable?: boolean;
   format?: (row: T) => string;
+  /** Rend la cellule comme une pastille colorée plutôt que du texte brut (ex. statut) —
+   * prioritaire sur `format` quand défini. */
+  badge?: (row: T) => DataTableBadge | null;
 }
 
 @Component({
@@ -60,5 +70,9 @@ export class DataTableComponent<T> {
   valeur(row: T, col: DataTableColumn<T>): string {
     if (col.format) return col.format(row);
     return String(row[col.key] ?? '');
+  }
+
+  badgeDe(row: T, col: DataTableColumn<T>): DataTableBadge | null {
+    return col.badge ? col.badge(row) : null;
   }
 }

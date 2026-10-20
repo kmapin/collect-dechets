@@ -27,7 +27,10 @@
       <ng-container *ngIf="!loading; else squelette">
         <tr *ngFor="let row of rowsTriees">
           <td *ngFor="let col of columns" [class.data-table__right]="col.align === 'right'" [attr.data-label]="col.label">
-            {{ valeur(row, col) }}
+            <ng-container *ngIf="badgeDe(row, col) as badge; else texteCellule">
+              <span class="dt-badge" [ngClass]="'dt-badge--' + badge.variant">{{ badge.text }}</span>
+            </ng-container>
+            <ng-template #texteCellule>{{ valeur(row, col) }}</ng-template>
           </td>
         </tr>
         <tr *ngIf="!rowsTriees.length">

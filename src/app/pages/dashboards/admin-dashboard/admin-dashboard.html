@@ -3272,6 +3272,30 @@
         </div>
       </div>
 
+      <!-- Actions Telecel Cashin — uniquement pour les retraits via Telecel Money -->
+      @if (peutVerifierStatutTelecel(selectedWithdrawal) || peutAnnulerRetraitTelecel(selectedWithdrawal)) {
+      <div class="drawer-section">
+        <h4 class="drawer-section-title"><i class="material-icons">sync_problem</i> Actions Telecel Cashin</h4>
+        <p class="drawer-section-hint">
+          À utiliser si une erreur est constatée après la validation de ce retrait par un administrateur.
+        </p>
+        <div class="drawer-actions">
+          @if (peutVerifierStatutTelecel(selectedWithdrawal)) {
+          <button class="btn btn-outline" [disabled]="isCheckingTelecelStatus" (click)="verifierStatutTelecel(selectedWithdrawal)">
+            <i class="material-icons">{{ isCheckingTelecelStatus ? 'hourglass_empty' : 'search' }}</i>
+            {{ isCheckingTelecelStatus ? 'Vérification...' : 'Vérifier le statut réel' }}
+          </button>
+          }
+          @if (peutAnnulerRetraitTelecel(selectedWithdrawal)) {
+          <button class="btn btn-danger" [disabled]="isCancellingTelecelWithdrawal" (click)="annulerRetraitTelecel(selectedWithdrawal)">
+            <i class="material-icons">{{ isCancellingTelecelWithdrawal ? 'hourglass_empty' : 'undo' }}</i>
+            {{ isCancellingTelecelWithdrawal ? 'Annulation...' : 'Annuler le retrait (reversal)' }}
+          </button>
+          }
+        </div>
+      </div>
+      }
+
       <!-- Informations financières -->
       <div class="drawer-section">
         <h4 class="drawer-section-title"><i class="material-icons">account_balance</i> Situation financière</h4>
