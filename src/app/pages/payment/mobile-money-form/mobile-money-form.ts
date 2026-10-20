@@ -13,6 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OtpInputComponent } from '../otp-input/otp-input';
 import { PhoneInputDirective } from '../../../shared/phone-input.directive';
 import { normalizePhone } from '../../../shared/phone.util';
+import { operateurMsisdnCrossValidator } from '../../../shared/operator-msisdn.util';
 
 interface OperatorInfo {
   id: number;
@@ -159,7 +160,7 @@ export class MobileMoneyFormComponent implements OnInit {
         Validators.minLength(3),
         Validators.maxLength(200)
       ]]
-    });
+    }, { validators: operateurMsisdnCrossValidator('operator', 'phoneNumber') });
   }
 
   onSubmit(): void {
@@ -229,7 +230,11 @@ export class MobileMoneyFormComponent implements OnInit {
     if (field.errors['pattern']) {
       return 'Format de numéro invalide';
     }
-    
+
+    if (field.errors['operatorMismatch']) {
+      return field.errors['operatorMismatch'];
+    }
+
     if (field.errors['min']) {
       return 'Le montant doit être supérieur à 0';
     }

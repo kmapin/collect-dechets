@@ -16,7 +16,10 @@ describe('MobileMoneyFormComponent - transmission de redevanceId (Phase 8)', () 
   function remplirFormulaireValide() {
     component.paymentForm.patchValue({
       operator: 'ORANGE_MONEY',
-      phoneNumber: '70000000',
+      // Préfixe 07 (Orange) et non 70 (Moov) — depuis l'ajout de
+      // operateurMsisdnCrossValidator (shared/operator-msisdn.util.ts), un numéro dont le
+      // préfixe ne correspond pas à l'opérateur choisi invalide désormais le formulaire.
+      phoneNumber: '07000000',
       amount: 5000,
       description: 'Paiement redevance',
     });

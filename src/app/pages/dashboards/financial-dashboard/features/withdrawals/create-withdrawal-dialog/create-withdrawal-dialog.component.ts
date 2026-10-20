@@ -12,6 +12,7 @@ import { formatMontantXof } from '../../../utils/money.util';
 import { FeeConfigService } from '../../../../../../services/fee-config.service';
 import { ScrollLockDirective } from '../../../../../../shared/scroll-lock.directive';
 import { PhoneInputDirective } from '../../../../../../shared/phone-input.directive';
+import { operateurMsisdnCrossValidator } from '../../../../../../shared/operator-msisdn.util';
 
 type Etape = 'formulaire' | 'confirmation';
 
@@ -66,7 +67,7 @@ export class CreateWithdrawalDialogComponent {
     // état visible, contrairement aux 2 radios qu'il remplace (qui, elles, démarraient
     // sans sélection — Validators.required forçait un choix explicite avant validation).
     feeOption: this.fb.control<FeeOptionRetrait | null>('A', Validators.required),
-  });
+  }, { validators: operateurMsisdnCrossValidator('operator', 'customerMsisdn') });
 
   
   private readonly montantSignal = toSignal(this.form.controls.montant.valueChanges, {
@@ -170,6 +171,7 @@ export class CreateWithdrawalDialogComponent {
     if (!champ || !champ.errors || !champ.touched) return '';
     if (champ.errors['required']) return 'Ce champ est obligatoire';
     if (champ.errors['pattern']) return 'Numéro invalide (8 chiffres attendus)';
+    if (champ.errors['operatorMismatch']) return champ.errors['operatorMismatch'];
     if (champ.errors['min']) return 'Le montant doit être supérieur à 0';
     if (champ.errors['maxlength']) return `Maximum ${champ.errors['maxlength'].requiredLength} caractères`;
     return 'Valeur invalide';
