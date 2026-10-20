@@ -39,6 +39,7 @@ export class CreateWithdrawalDialogComponent {
   readonly operateurs: OperateurInfo[] = [
     { value: 'MOOV_MONEY', label: 'Moov Money', disponible: true },
     { value: 'ORANGE_MONEY', label: 'Orange Money', disponible: true },
+    { value: 'TELECEL_MONEY', label: 'Telecel Money', disponible: true },
   ];
 
   readonly etape = signal<Etape>('formulaire');

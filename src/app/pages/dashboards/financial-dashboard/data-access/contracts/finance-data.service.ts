@@ -16,7 +16,7 @@ export interface MontantTotalFilter {
   planType?: string;
 }
 
-export type OperateurRetrait = 'MOOV_MONEY' | 'ORANGE_MONEY';
+export type OperateurRetrait = 'MOOV_MONEY' | 'ORANGE_MONEY' | 'TELECEL_MONEY';
 
 export type FeeOptionRetrait = 'A' | 'B';
 
