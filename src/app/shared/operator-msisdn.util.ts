@@ -18,6 +18,21 @@ const LABEL_OPERATEUR: Record<string, string> = {
   TELECEL_MONEY: 'Telecel Money',
 };
 
+// Un seul préfixe représentatif par opérateur (le premier de chaque liste ci-dessus) —
+// uniquement pour un placeholder cohérent, jamais utilisé pour la validation elle-même.
+const PREFIXE_EXEMPLE: Record<string, string> = {
+  ORANGE_MONEY: '07',
+  MOOV_MONEY: '70',
+  TELECEL_MONEY: '58',
+};
+
+/** Placeholder du champ numéro, cohérent avec l'opérateur sélectionné (ex: "07000000" pour
+ * Orange Money) — à défaut d'opérateur choisi, retombe sur l'exemple Moov déjà affiché. */
+export function exempleNumeroOperateur(operator: string | null | undefined): string {
+  const prefixe = (operator && PREFIXE_EXEMPLE[operator]) || '70';
+  return `${prefixe}000000`;
+}
+
 /** Retire espaces/tirets/+ et l'indicatif 226 — même normalisation que le backend. */
 function normaliserMsisdnBurkina(msisdn: string): string {
   let n = (msisdn || '').replace(/[\s\-+]/g, '');

@@ -13,7 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OtpInputComponent } from '../otp-input/otp-input';
 import { PhoneInputDirective } from '../../../shared/phone-input.directive';
 import { normalizePhone } from '../../../shared/phone.util';
-import { operateurMsisdnCrossValidator } from '../../../shared/operator-msisdn.util';
+import { exempleNumeroOperateur, operateurMsisdnCrossValidator } from '../../../shared/operator-msisdn.util';
 
 interface OperatorInfo {
   id: number;
@@ -141,6 +141,7 @@ export class MobileMoneyFormComponent implements OnInit {
     }
   }
   get operator() { return this.paymentForm.get('operator'); }
+  get placeholderMsisdn(): string { return exempleNumeroOperateur(this.operator?.value); }
   get phoneNumber() { return this.paymentForm.get('phoneNumber'); }
   get amount() { return this.paymentForm.get('amount'); }
   get description() { return this.paymentForm.get('description'); }

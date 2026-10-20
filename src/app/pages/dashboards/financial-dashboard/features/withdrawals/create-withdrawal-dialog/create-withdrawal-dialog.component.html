@@ -37,7 +37,7 @@
 
       <div class="fin-create-withdrawal__field">
         <label for="retrait-msisdn">Numéro Mobile Money *</label>
-        <input id="retrait-msisdn" type="tel" formControlName="customerMsisdn" maxlength="8" placeholder="70000000" required appPhoneInput />
+        <input id="retrait-msisdn" type="tel" formControlName="customerMsisdn" maxlength="8" [placeholder]="placeholderMsisdn" required appPhoneInput />
         <span class="fin-create-withdrawal__field-error" *ngIf="form.get('customerMsisdn')?.invalid && form.get('customerMsisdn')?.touched">
           {{ messageErreur('customerMsisdn') }}
         </span>

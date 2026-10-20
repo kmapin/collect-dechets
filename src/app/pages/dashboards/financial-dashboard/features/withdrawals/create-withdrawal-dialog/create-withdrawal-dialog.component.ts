@@ -12,7 +12,7 @@ import { formatMontantXof } from '../../../utils/money.util';
 import { FeeConfigService } from '../../../../../../services/fee-config.service';
 import { ScrollLockDirective } from '../../../../../../shared/scroll-lock.directive';
 import { PhoneInputDirective } from '../../../../../../shared/phone-input.directive';
-import { operateurMsisdnCrossValidator } from '../../../../../../shared/operator-msisdn.util';
+import { exempleNumeroOperateur, operateurMsisdnCrossValidator } from '../../../../../../shared/operator-msisdn.util';
 
 type Etape = 'formulaire' | 'confirmation';
 
@@ -87,6 +87,10 @@ export class CreateWithdrawalDialogComponent {
 
   get operatorLabel(): string {
     return this.operateurs.find(o => o.value === this.form.value.operator)?.label ?? '';
+  }
+
+  get placeholderMsisdn(): string {
+    return exempleNumeroOperateur(this.form.controls.operator.value);
   }
 
   private computeFeeAmount(montant: number): number {

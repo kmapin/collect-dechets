@@ -27,6 +27,7 @@ describe('MunicipalityDashboard - filterIncidents', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
       {} as any
     );
 
@@ -88,6 +89,7 @@ describe('MunicipalityDashboard - getIncidentBreakdown', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
       {} as any
     );
   });
@@ -134,6 +136,7 @@ describe('MunicipalityDashboard - loadPerformanceOverview', () => {
       {} as any,
       {} as any,
       adminService as any,
+      {} as any,
       {} as any,
       {} as any,
       {} as any,
