@@ -145,6 +145,10 @@ export class TeamConflictDetectorComponent implements OnChanges {
     return out;
   });
 
+  // Conflits réels uniquement (critical/warning) — les suggestions ont leur propre
+  // carte "Suggestions d'optimisation" plus bas ; les mélanger ici affichait deux fois
+  // le même contenu, en plus de faire apparaître "Alertes détectées" (icône rouge/
+  // orange) pour de simples infos de disponibilité sans aucun conflit réel.
   alertEvents = computed<AlertEvent[]>(() => {
     const events: AlertEvent[] = [];
     for (const t of this.selectedTeams()) {
@@ -158,9 +162,6 @@ export class TeamConflictDetectorComponent implements OnChanges {
           severity: c.severity,
         });
       }
-    }
-    for (const s of this.suggestions()) {
-      events.push({ teamName: 'Suggestion', icon: 'lightbulb', color: '#3b82f6', title: s, detail: '', severity: 'info' });
     }
     return events;
   });
