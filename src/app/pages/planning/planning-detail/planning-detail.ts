@@ -694,7 +694,11 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       next: (res) => {
         this.planning.update(prev => prev ? { ...prev, status: res.data?.planningStatus ?? 'annule', cancelledAt: res.data?.cancelledAt ?? prev.cancelledAt } : prev);
         if (this.planning()) this._buildActivities(this.planning()!);
-        this.msg.add({ severity: 'warn', summary: 'Annulé', detail: `Planning "${p.reference}" annulé` });
+        const nbCollectes = res.data?.collectesAnnuleesCount ?? 0;
+        const detail = nbCollectes > 0
+          ? `Planning "${p.reference}" annulé — ${nbCollectes} collecte(s) en attente également annulée(s)`
+          : `Planning "${p.reference}" annulé`;
+        this.msg.add({ severity: 'warn', summary: 'Annulé', detail });
         this.isActioning.set(false);
       },
       error: (err) => {

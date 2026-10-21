@@ -200,6 +200,17 @@
                     <button class="action-btn edit" type="button" title="Modifier" (click)="ouvrirEdition(employe)">
                       <i class="material-icons">edit</i>
                     </button>
+                    <button
+                      class="action-btn"
+                      [class.warning]="employe.status === 'active'"
+                      [class.success]="employe.status !== 'active'"
+                      type="button"
+                      [disabled]="employeEnChangementStatut() === employe._id"
+                      [title]="employe.status === 'active' ? 'Désactiver' : 'Activer'"
+                      (click)="basculerStatut(employe)"
+                    >
+                      <i class="material-icons">{{ employe.status === 'active' ? 'block' : 'check_circle' }}</i>
+                    </button>
                   }
                   @if (peutSupprimer) {
                     <button class="action-btn danger" type="button" title="Supprimer" (click)="supprimer(employe)">
@@ -246,6 +257,17 @@
             @if (peutModifier) {
               <button class="action-btn edit" type="button" title="Modifier" (click)="ouvrirEdition(employe)">
                 <i class="material-icons">edit</i>
+              </button>
+              <button
+                class="action-btn"
+                [class.warning]="employe.status === 'active'"
+                [class.success]="employe.status !== 'active'"
+                type="button"
+                [disabled]="employeEnChangementStatut() === employe._id"
+                [title]="employe.status === 'active' ? 'Désactiver' : 'Activer'"
+                (click)="basculerStatut(employe)"
+              >
+                <i class="material-icons">{{ employe.status === 'active' ? 'block' : 'check_circle' }}</i>
               </button>
             }
             @if (peutSupprimer) {

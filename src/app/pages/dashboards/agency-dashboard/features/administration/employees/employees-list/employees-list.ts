@@ -442,6 +442,38 @@ export class EmployeesList {
     });
   }
 
+  readonly employeEnChangementStatut = signal<string | null>(null);
+
+  async basculerStatut(employe: Employee): Promise<void> {
+    if (this.employeEnChangementStatut()) return;
+    const prochainStatut: 'active' | 'inactive' = employe.status === 'active' ? 'inactive' : 'active';
+
+    if (prochainStatut === 'inactive') {
+      const confirme = await this.confirmDialog.confirm({
+        title: 'Désactiver cet employé ?',
+        message: `${employe.firstName} ${employe.lastName} ne pourra plus se connecter tant que son compte n'est pas réactivé.`,
+        variant: 'danger',
+        confirmLabel: 'Désactiver',
+        cancelLabel: 'Annuler',
+      });
+      if (!confirme) return;
+    }
+
+    this.employeEnChangementStatut.set(employe._id);
+    this.employeeAdministrationService.setStatus(employe._id, prochainStatut).subscribe({
+      next: () => {
+        const label = prochainStatut === 'active' ? 'activé' : 'désactivé';
+        this.notification.showSuccess(`Employé ${label}`, `${employe.firstName} ${employe.lastName} a été ${label}.`);
+        this.employeEnChangementStatut.set(null);
+        this.charger();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.notification.showError('Changement de statut impossible', err.error?.message ?? 'Une erreur est survenue.');
+        this.employeEnChangementStatut.set(null);
+      },
+    });
+  }
+
   // Avatar (initiales + couleur) — réutilise SharedService, déjà utilisé par le même
   // design sur la liste Clients (agency-dashboard.ts::getInitials/getRandomColor),
   // plutôt que de dupliquer la logique ici.

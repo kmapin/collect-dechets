@@ -67,4 +67,21 @@ export class EmployeeAdministrationService {
   remove(id: string): Observable<void> {
     return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/${id}`).pipe(map(() => undefined));
   }
+
+  /**
+   * Active/désactive un employé — réutilise l'endpoint EXISTANT, déjà en production,
+   * PUT /api/users/agency/:userId (routes/userRoute.js, controllers/user.js::activeUser) :
+   * déjà gouverné manager/super_admin + scope agence (callerOwnsAgency), déjà utilisé par
+   * admin-dashboard.ts::toggleUserStatus. Pas de nouvelle route /agency/employees/:id/status
+   * créée pour ça — ce endpoint fait exactement ce qu'il faut et évite d'attendre un
+   * déploiement backend séparé pour cette seule fonctionnalité.
+   * Attention : cet endpoint BASCULE l'état actuel côté serveur (active <-> inactive),
+   * il ignore totalement `status` dans le body — jamais une garantie de forcer une valeur
+   * précise, seulement un indicateur pour le message de succès affiché ici.
+   */
+  setStatus(id: string, status: 'active' | 'inactive'): Observable<void> {
+    return this.http
+      .put<{ success: boolean; message: string }>(`${environment.apiUrl}/users/agency/${id}`, { status })
+      .pipe(map(() => undefined));
+  }
 }

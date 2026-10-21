@@ -478,7 +478,11 @@ export class PlanningDashboard implements OnInit, OnDestroy {
         this.planningService.cancelPlanning(p.id).subscribe({
           next: (res) => {
             this._refreshPlannings(p.id, res?.data?.planningStatus ?? 'annule');
-            this.msg.add({ severity: 'warn', summary: 'Annulé', detail: `${p.reference} a été annulé.` });
+            const nbCollectes = res?.data?.collectesAnnuleesCount ?? 0;
+            const detail = nbCollectes > 0
+              ? `${p.reference} a été annulé — ${nbCollectes} collecte(s) en attente également annulée(s).`
+              : `${p.reference} a été annulé.`;
+            this.msg.add({ severity: 'warn', summary: 'Annulé', detail });
           },
           error: (err) => {
             const detail = err?.error?.error?.message ?? 'Impossible d\'annuler ce planning';
