@@ -1,6 +1,6 @@
 import { CellWidthType } from "./../../../../../node_modules/jspdf-autotable/dist/index.d";
 import { BarcodeFormat } from "@zxing/library";
-import { AfterViewChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/core";
+import { AfterViewChecked, Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule, TitleStrategy } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -293,12 +293,48 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
           (a, b) => new Date(b.endDate || 0).getTime() - new Date(a.endDate || 0).getTime()
         );
         this.activeSubscription = sortedByEndDateDesc.find((c) => isContratCurrentlyActive(c)) || null;
+
+        this.mesAgences = this.deriverAgencesDistinctes(contrats);
       },
       error: () => {
         this.activeContrat = null;
         this.activeSubscription = null;
+        this.mesAgences = [];
       },
     });
+  }
+
+  /** "Mon agence"/"Mes agences" (bouton d'accès rapide) — Modèle C (multi-lieux) : un
+   * client peut avoir des contrats avec PLUSIEURS agences différentes (une par lieu de
+   * service), jamais une seule "agence d'abonnement" comme avant la fusion Subscription ->
+   * Contrat (`User.subscribedAgencyId`, un champ qui n'existe même plus côté backend —
+   * c'est pour ça que le bouton avait disparu). Dérivé des contrats déjà chargés pour les
+   * autres cartes du dashboard, jamais un second appel réseau dédié. */
+  mesAgences: { _id: string; name: string }[] = [];
+  afficherMenuAgences = false;
+
+  private deriverAgencesDistinctes(contrats: Contrat[]): { _id: string; name: string }[] {
+    const parId = new Map<string, { _id: string; name: string }>();
+    for (const contrat of contrats) {
+      const agence = contrat.agencyId as any;
+      if (agence && typeof agence === 'object' && agence._id) {
+        parId.set(String(agence._id), { _id: String(agence._id), name: agence.name || 'Agence' });
+      }
+    }
+    return [...parId.values()];
+  }
+
+  basculerMenuAgences(): void {
+    this.afficherMenuAgences = !this.afficherMenuAgences;
+  }
+
+  fermerMenuAgences(): void {
+    this.afficherMenuAgences = false;
+  }
+
+  @HostListener('document:click')
+  surClicDocument(): void {
+    this.afficherMenuAgences = false;
   }
 
   contratAgencyName(): string {

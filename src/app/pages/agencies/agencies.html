@@ -8,8 +8,8 @@
       </p>
     </div>
     <!-- <div class="quick-actions"> -->
-    @if (currentUser?.subscribedAgencyId) {
-    <button class="btn btn-secondary m-5" routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}">
+    @if (currentUser?.subscribedAgencyId || currentUser?.agencyId) {
+    <button class="btn btn-secondary m-5" [routerLink]="['/agencies', currentUser?.subscribedAgencyId || currentUser?.agencyId]">
       <i class="material-icons">business</i>
       Mon agence
     </button>

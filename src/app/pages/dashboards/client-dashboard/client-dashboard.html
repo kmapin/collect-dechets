@@ -13,15 +13,37 @@
             <i class="material-icons">message</i>Mes messages
             <span class="tab-badge">{{ unreadMessageCount ? unreadMessageCount : 0 }}</span>
           </button>
-          @if (currentUser?.subscribedAgencyId) {
+          @if (mesAgences.length === 1) {
             <button
               class="qa-btn"
-              routerLink="/agencies/{{ currentUser?.subscribedAgencyId }}"
+              [routerLink]="['/agencies', mesAgences[0]._id]"
               [state]="{ fromDashboard: true }"
               >
               <i class="material-icons">business</i>
               Mon agence
             </button>
+          } @else if (mesAgences.length > 1) {
+            <div class="qa-dropdown" (click)="$event.stopPropagation()">
+              <button class="qa-btn" type="button" (click)="basculerMenuAgences()">
+                <i class="material-icons">business</i>
+                Mes agences ({{ mesAgences.length }})
+                <i class="material-icons">{{ afficherMenuAgences ? 'expand_less' : 'expand_more' }}</i>
+              </button>
+              @if (afficherMenuAgences) {
+                <div class="qa-dropdown-menu">
+                  @for (agence of mesAgences; track agence._id) {
+                    <a
+                      [routerLink]="['/agencies', agence._id]"
+                      [state]="{ fromDashboard: true }"
+                      (click)="fermerMenuAgences()"
+                      >
+                      <i class="material-icons">business</i>
+                      {{ agence.name }}
+                    </a>
+                  }
+                </div>
+              }
+            </div>
           }
           <button class="qa-btn" (click)="openSpontaneousRequestModal()">
             <i class="material-icons">local_shipping</i>
