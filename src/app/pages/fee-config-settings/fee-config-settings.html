@@ -72,7 +72,7 @@
       </section>
 
       <div class="fc-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="isSaving || hasErrors">
+        <button type="submit" class="btn btn-primary" [disabled]="isSaving || hasErrors || !hasUnsavedChanges()">
           {{ isSaving ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
       </div>

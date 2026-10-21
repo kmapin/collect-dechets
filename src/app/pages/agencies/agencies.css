@@ -655,10 +655,6 @@
     }
 
     @media (max-width: 768px) {
-      .agencies-grid {
-        grid-template-columns: 1fr;
-      }
-
       .filters-grid {
         grid-template-columns: 1fr;
       }

@@ -294,7 +294,7 @@
                           <i class="material-icons star">star</i>
                         }
                       </div>
-                      <span class="rating-text">{{ agency.rating }}/5</span>
+                      <span class="rating-text">{{ agency.rating | number: '1.0-2' }}/5</span>
                       @if (agency.ratingsCount) {
                         <span class="reviews-count">({{ agency.ratingsCount }} avis)</span>
                       }

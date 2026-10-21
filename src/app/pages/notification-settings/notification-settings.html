@@ -73,7 +73,7 @@
     </section>
 
     <div class="ns-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="isSaving">
+      <button type="submit" class="btn btn-primary" [disabled]="isSaving || !hasUnsavedChanges()">
         {{ isSaving ? 'Enregistrement…' : 'Enregistrer' }}
       </button>
     </div>

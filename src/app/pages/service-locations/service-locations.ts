@@ -112,6 +112,14 @@ export class ServiceLocationsComponent implements OnInit, OnDestroy {
   showForm = false;
   editingId: string | null = null;
   form: ServiceLocationForm = { ...EMPTY_FORM };
+  /** Instantané pris à l'ouverture de l'édition — griser "Enregistrer" tant
+   * qu'aucun champ n'a changé (voir hasFormChanged). */
+  private originalForm: ServiceLocationForm | null = null;
+
+  hasFormChanged(): boolean {
+    if (!this.originalForm) return true;
+    return JSON.stringify(this.form) !== JSON.stringify(this.originalForm);
+  }
 
   // Position GPS précise du lieu — même convention que profile.ts (carte Leaflet,
   // repère déplaçable, géolocalisation navigateur) pour que le collecteur retrouve
@@ -352,6 +360,7 @@ export class ServiceLocationsComponent implements OnInit, OnDestroy {
   ouvrirCreation(): void {
     this.editingId = null;
     this.form = { ...EMPTY_FORM };
+    this.originalForm = null;
     this.arrondissements = [];
     this.sectors = [];
     this.neighborhoods = [];
@@ -380,6 +389,7 @@ export class ServiceLocationsComponent implements OnInit, OnDestroy {
     this.showDetail = false;
     this.showForm = true;
     this.onCityChange(loc.address.city, true);
+    this.originalForm = JSON.parse(JSON.stringify(this.form));
   }
 
   fermerForm(): void {

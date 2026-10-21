@@ -3124,12 +3124,38 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
 
+  /** Instantané des seuls champs réellement édités dans le drawer (voir
+   * saveUserChanges) — comparer selectedUser en entier serait trop sensible : cet
+   * objet peut être partagé avec une liste mise à jour en tâche de fond (websocket),
+   * ce qui marquerait à tort le formulaire comme modifié. */
+  private originalEditUserSnapshot: string | null = null;
+
+  private snapshotEditableUserFields(u: any): string {
+    return JSON.stringify({
+      firstName: u?.firstName,
+      lastName: u?.lastName,
+      phone: u?.phone,
+      address: {
+        street: u?.address?.street,
+        city: u?.address?.city,
+        neighborhood: u?.address?.neighborhood,
+        sector: u?.address?.sector,
+      },
+    });
+  }
+
+  hasUserEditChanges(): boolean {
+    if (!this.originalEditUserSnapshot) return true;
+    return this.snapshotEditableUserFields(this.selectedUser) !== this.originalEditUserSnapshot;
+  }
+
   openEditUserDrawer(): void {
     const id = this.selectedUser?._id || this.selectedUser?.id;
     if (!id) return;
     this.isEditingUser = true;
     this.visible1 = false;
     this.visibleEditUserDrawer = true;
+    this.originalEditUserSnapshot = this.snapshotEditableUserFields(this.selectedUser);
   }
 
   closeEditUserDrawer(): void {
@@ -3192,6 +3218,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.isEditingUser = true;
     this.visible1 = false;
     this.visibleEditUserDrawer = true;
+    this.originalEditUserSnapshot = this.snapshotEditableUserFields(this.selectedUser);
   }
 
   // Suppression directe depuis la liste → ouvre le dialog

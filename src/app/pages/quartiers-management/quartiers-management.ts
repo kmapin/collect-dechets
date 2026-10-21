@@ -70,6 +70,14 @@ export class QuartiersManagementComponent implements OnInit {
   form: QuartierForm = { ...EMPTY_FORM };
   formArrondissements: any[] = [];
   formSectors: any[] = [];
+  /** Instantané pris à l'ouverture de l'édition — griser "Enregistrer" tant
+   * qu'aucun champ n'a changé (voir hasFormChanged). */
+  private originalForm: QuartierForm | null = null;
+
+  hasFormChanged(): boolean {
+    if (!this.originalForm) return true;
+    return JSON.stringify(this.form) !== JSON.stringify(this.originalForm);
+  }
 
   constructor(
     private readonly territoryService: TerritoryHttpService,
@@ -146,6 +154,7 @@ export class QuartiersManagementComponent implements OnInit {
   ouvrirCreation(): void {
     this.editingId = null;
     this.form = { ...EMPTY_FORM };
+    this.originalForm = null;
     this.formArrondissements = [];
     this.formSectors = [];
     this.showForm = true;
@@ -164,6 +173,7 @@ export class QuartiersManagementComponent implements OnInit {
     };
     this.formArrondissements = this.arrondissements.filter((a: any) => a.cityId === q.cityId);
     this.formSectors = this.sectors.filter((s: any) => s.arrondissementId === q.arrondissementId);
+    this.originalForm = JSON.parse(JSON.stringify(this.form));
     this.showForm = true;
   }
 

@@ -1975,7 +1975,7 @@
                         type="button"
                         class="btn btn-primary"
                         (click)="saveVehicle()"
-                        [disabled]="isSavingVehicle"
+                        [disabled]="isSavingVehicle || (isEditingVehicle && !hasVehicleFormChanged())"
                       >
                         @if (isSavingVehicle) {
                           <i class="material-icons spin">sync</i>
@@ -2098,7 +2098,7 @@
                         type="submit"
                         form="tariff-form"
                         class="btn btn-primary"
-                        [disabled]="!tariffForm.valid || isLoading"
+                        [disabled]="!tariffForm.valid || isLoading || (isEditingTariff && tariffForm.pristine)"
                       >
                         @if (isLoading) {
                           <span class="loading-spinner"></span>

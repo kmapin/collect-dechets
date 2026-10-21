@@ -110,6 +110,9 @@ export class Profile implements OnInit, OnDestroy {
   ];
   isLoading: boolean = false;
   currentUserId: string | null = null;
+  /** Instantané des données chargées depuis le serveur — sert à griser le bouton
+   * "Modifier le compte" tant qu'aucun champ du formulaire n'a réellement changé. */
+  private originalUserData: RegisterUserData | null = null;
 
   private profileMap?: L.Map;
   private profileMarker?: L.Marker;
@@ -187,6 +190,10 @@ export class Profile implements OnInit, OnDestroy {
       if (this.user.address.city) {
         this.onCityChange(this.user.address.city);
       }
+      // Instantané pris APRÈS la normalisation synchrone ci-dessus (onCityChange
+      // remplace les champs d'adresse manquants par "") — sinon le bouton
+      // "Modifier le compte" serait déjà considéré comme modifié au chargement.
+      this.originalUserData = JSON.parse(JSON.stringify(this.userData));
       if (this.profileMap) {
         this._setProfileMarkerPosition(
           this.userData.address.latitude || this.DEFAULT_MAP_CENTER[0],
@@ -352,8 +359,16 @@ export class Profile implements OnInit, OnDestroy {
     });
   }
   isButtonDisabled(): boolean {
-    const disabled = this.isLoading;
-    return disabled;
+    if (this.isLoading) return true;
+    return !this.hasUnsavedChanges();
+  }
+
+  /** Vrai si au moins un champ du formulaire diffère de l'instantané pris au
+   * chargement (voir getUser) — le bouton "Modifier le compte" reste grisé tant
+   * qu'aucun champ n'a réellement été modifié. */
+  private hasUnsavedChanges(): boolean {
+    if (!this.originalUserData) return true;
+    return JSON.stringify(this.userData) !== JSON.stringify(this.originalUserData);
   }
   private handleRegistrationError(
     error: string | { [key: string]: string[] } | undefined,

@@ -41,7 +41,7 @@
                     <i class="material-icons star">star</i>
                     }
                   </div>
-                  <span class="rating-text">{{ agency?.rating }}/5</span>
+                  <span class="rating-text">{{ agency?.rating | number: '1.0-2' }}/5</span>
                   @if (agency?.ratingsCount) {
                     <span class="reviews-count">({{ agency?.ratingsCount }} avis)</span>
                   }
@@ -477,7 +477,7 @@
                   <i class="material-icons">star</i>
                 </div>
                 <div class="stat-details">
-                  <span class="stat-number">{{ agency?.rating }}/5</span>
+                  <span class="stat-number">{{ agency?.rating | number: '1.0-2' }}/5</span>
                   <span class="stat-label">Note moyenne</span>
                 </div>
               </div>
@@ -514,7 +514,7 @@
                         <i class="material-icons star">star</i>
                       }
                     </div>
-                    <span>{{ agency.rating }}/5</span>
+                    <span>{{ agency.rating | number: '1.0-2' }}/5</span>
                   </div>
                   }
                 </div>

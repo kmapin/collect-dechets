@@ -26,6 +26,18 @@ export class FeeConfigSettingsComponent implements OnInit {
 
   clientPaymentFee: FeeBlock = { ...DEFAULT_BLOCK };
   agencyWithdrawalFee: FeeBlock = { ...DEFAULT_BLOCK };
+  /** Instantané pris après chargement/enregistrement — griser "Enregistrer" tant
+   * qu'aucun des deux blocs n'a réellement changé. */
+  private originalFeeSnapshot: string | null = null;
+
+  private snapshotFees(): string {
+    return JSON.stringify({ clientPaymentFee: this.clientPaymentFee, agencyWithdrawalFee: this.agencyWithdrawalFee });
+  }
+
+  hasUnsavedChanges(): boolean {
+    if (!this.originalFeeSnapshot) return true;
+    return this.snapshotFees() !== this.originalFeeSnapshot;
+  }
 
   readonly feeTypes: { value: FeeType; label: string }[] = [
     { value: 'PERCENTAGE', label: 'Pourcentage (%)' },
@@ -56,6 +68,7 @@ export class FeeConfigSettingsComponent implements OnInit {
           this.agencyWithdrawalFee = { ...DEFAULT_BLOCK, ...data.agencyWithdrawalFee };
         }
         this.isLoading = false;
+        this.originalFeeSnapshot = this.snapshotFees();
       },
       error: () => {
         this.isLoading = false;
@@ -100,6 +113,7 @@ export class FeeConfigSettingsComponent implements OnInit {
           this.clientPaymentFee = { ...DEFAULT_BLOCK, ...data.clientPaymentFee };
           this.agencyWithdrawalFee = { ...DEFAULT_BLOCK, ...data.agencyWithdrawalFee };
         }
+        this.originalFeeSnapshot = this.snapshotFees();
         this.notificationService.showSuccess('Configuration enregistrée', 'Les frais plateforme ont été mis à jour.');
       },
       error: (err) => {

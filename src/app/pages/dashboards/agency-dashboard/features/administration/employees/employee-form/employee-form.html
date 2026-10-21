@@ -165,7 +165,7 @@
     <button class="btn btn-outline" type="button" (click)="annuler()" [disabled]="enregistrementEnCours">
       Annuler
     </button>
-    <button class="btn btn-primary" type="submit" [disabled]="enregistrementEnCours">
+    <button class="btn btn-primary" type="submit" [disabled]="enregistrementEnCours || (estEdition && form.pristine)">
       @if (enregistrementEnCours) {
         <i class="material-icons spin">sync</i>
       } @else {

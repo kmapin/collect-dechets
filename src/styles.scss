@@ -368,6 +368,19 @@ body.signalement-drawer-open .card:hover {
   cursor: not-allowed;
   transform: none;
 }
+
+// Griser toute action principale/secondaire/danger désactivée (ex. "Modifier le
+// compte" tant qu'aucun champ n'a changé) — jusqu'ici seul .btn-outline avait ce
+// traitement ; .btn-primary/.btn-secondary/.btn-danger restaient pleinement
+// colorés et cliquables en apparence malgré [disabled]. Placé après les règles
+// :hover ci-dessus pour gagner le départage de spécificité égale et annuler leur
+// transform au survol une fois désactivé.
+.btn:disabled,
+.btn:disabled:hover {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
 .btn-success {
   background: var(--success-color);
   color: var(--white);

@@ -2714,7 +2714,7 @@
           <i class="material-icons">close</i>
           Annuler
         </button>
-        <button class="btn btn-success" (click)="saveUserChanges()" [disabled]="isSavingUser">
+        <button class="btn btn-success" (click)="saveUserChanges()" [disabled]="isSavingUser || !hasUserEditChanges()">
           <i class="material-icons">{{ isSavingUser ? 'hourglass_empty' : 'save' }}</i>
           {{ isSavingUser ? 'Enregistrement...' : 'Enregistrer' }}
         </button>

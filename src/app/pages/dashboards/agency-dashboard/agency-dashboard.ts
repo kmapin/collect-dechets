@@ -598,6 +598,15 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     return { plate: '', model: '', type: '', capacityTons: 0, status: 'disponible', fuelLevel: 100, mileage: 0, lastMaintenance: '' };
   }
 
+  /** Instantané pris à l'ouverture de l'édition d'un engin — griser "Enregistrer"
+   * tant qu'aucun champ n'a changé (voir hasVehicleFormChanged). */
+  private originalVehicleForm: typeof this.vehicleForm | null = null;
+
+  hasVehicleFormChanged(): boolean {
+    if (!this.originalVehicleForm) return true;
+    return JSON.stringify(this.vehicleForm) !== JSON.stringify(this.originalVehicleForm);
+  }
+
   loadVehicles(): void {
     const agencyId = this.currentUser?.agencyId;
     if (!agencyId) return;
@@ -622,6 +631,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     this.isEditingVehicle = false;
     this.selectedVehicle = null;
     this.vehicleForm = this.emptyVehicleForm();
+    this.originalVehicleForm = null;
     this.showVehicleModal = true;
   }
 
@@ -638,6 +648,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
       mileage: vehicle.mileage ?? 0,
       lastMaintenance: vehicle.lastMaintenance ?? '',
     };
+    this.originalVehicleForm = JSON.parse(JSON.stringify(this.vehicleForm));
     this.showVehicleModal = true;
   }
 

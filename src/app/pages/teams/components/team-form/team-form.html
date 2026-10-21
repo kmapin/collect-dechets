@@ -288,7 +288,7 @@
           Suivant<mat-icon>arrow_forward</mat-icon>
         </button>
       } @else {
-        <button type="button" class="tf-btn tf-btn--save" [disabled]="saving || !!vehicleConflict()" (click)="onSubmit()">
+        <button type="button" class="tf-btn tf-btn--save" [disabled]="saving || !!vehicleConflict() || (isEdit && form.pristine)" (click)="onSubmit()">
           <mat-icon>{{ saving ? 'hourglass_empty' : 'save' }}</mat-icon>
           {{ saving ? 'Enregistrement…' : (isEdit ? 'Enregistrer' : 'Créer l\'équipe') }}
         </button>

@@ -4,8 +4,8 @@ export const environment = {
   //URL en pre prod
   // apiUrl:'http://localhost:3000/api',
   // apiUrl: 'http://213.32.120.11:3000/api',
-  // apiUrl: 'https://api.zerodechets.sahelys.com/api',
-  apiUrl: 'http://62.210.173.100:4010/api',
+  apiUrl: 'https://api.zerodechets.sahelys.com/api',
+  // apiUrl: 'http://62.210.173.100:4010/api',
 
   // Racine du serveur SANS le suffixe /api — pour le WebSocket (core/services/
   // webstockets.ts) et le ping de santé (pages/service-unavailable). Valeur

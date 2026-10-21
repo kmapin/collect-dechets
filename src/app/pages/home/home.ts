@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -16,7 +17,7 @@ import { TerritorySelectComponent, toTerritoryOptions } from '../../shared/terri
 
 @Component({
   selector: 'app-home',
-  imports: [RouterModule, FormsModule, TerritorySelectComponent],
+  imports: [RouterModule, FormsModule, TerritorySelectComponent, DecimalPipe],
   templateUrl: './home.html',
   styleUrl: './home.scss'
 })

@@ -242,7 +242,7 @@
         <div class="drawer-footer">
           <div class="drawer-actions">
             <button type="button" class="btn btn-outline" (click)="fermerForm()">Annuler</button>
-            <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="enregistrer()">
+            <button type="button" class="btn btn-primary" [disabled]="isSaving || (!!editingId && !hasFormChanged())" (click)="enregistrer()">
               {{ isSaving ? 'Enregistrement...' : (editingId ? 'Enregistrer' : 'Ajouter le lieu') }}
             </button>
           </div>

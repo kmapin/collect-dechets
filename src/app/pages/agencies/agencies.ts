@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +16,7 @@ import { TerritorySelectComponent, toTerritoryOptions } from '../../shared/terri
 
 @Component({
   selector: 'app-agencies',
-  imports: [RouterModule, FormsModule, PaginatorModule, MatIconModule, TerritorySelectComponent],
+  imports: [RouterModule, FormsModule, PaginatorModule, MatIconModule, TerritorySelectComponent, DecimalPipe],
   templateUrl: './agencies.html',
   styleUrl: './agencies.css'
 })

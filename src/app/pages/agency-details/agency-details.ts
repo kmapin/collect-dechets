@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, signal } from "@angular/core";
+import { DecimalPipe } from "@angular/common";
 
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { Subscription } from "rxjs";
@@ -52,6 +53,7 @@ export interface AgencyZone {
     PhoneInputDirective,
     TerritorySelectComponent,
     ScrollLockDirective,
+    DecimalPipe,
   ],
   templateUrl: "./agency-details.html",
   styleUrl: "./agency-details.css",
@@ -1117,10 +1119,18 @@ export class AgencyDetails implements OnInit, OnDestroy {
     window.open(url, "_blank");
   }
 
+  /** Instantané pris à l'ouverture du drawer "Modifier votre agence" — userData
+   * reste volontairement la MÊME référence que this.agency (comportement existant :
+   * l'affichage se met à jour dès la saisie, sans dépendre d'un rechargement serveur
+   * après l'enregistrement) ; seul cet instantané sert à détecter si un champ a
+   * réellement changé, pour griser le bouton "Modifier le compte" tant que non. */
+  private originalAgencyEditData: any = null;
+
   editAgency() {
     this.userData = this.agency;
     console.log("[DEBUG] this.agency:", this.userData);
     this.onCityChange(this.userData.address.city);
+    this.originalAgencyEditData = JSON.parse(JSON.stringify(this.userData));
     this.visible2 = true;
     // this.router.navigate(['/edit-agency', this.agencyId]);
   }
@@ -1246,8 +1256,13 @@ export class AgencyDetails implements OnInit, OnDestroy {
     });
   }
   isButtonDisabled(): boolean {
-    const disabled = this.isLoading;
-    return disabled;
+    if (this.isLoading) return true;
+    return !this.hasUnsavedAgencyChanges();
+  }
+
+  private hasUnsavedAgencyChanges(): boolean {
+    if (!this.originalAgencyEditData) return true;
+    return JSON.stringify(this.userData) !== JSON.stringify(this.originalAgencyEditData);
   }
 
   private handleRegistrationError(

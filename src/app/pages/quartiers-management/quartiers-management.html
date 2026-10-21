@@ -152,7 +152,7 @@
 
       <div class="qm-drawer__footer">
         <button type="button" class="btn btn-outline" (click)="fermerForm()">Annuler</button>
-        <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="enregistrer()">
+        <button type="button" class="btn btn-primary" [disabled]="isSaving || (!!editingId && !hasFormChanged())" (click)="enregistrer()">
           {{ isSaving ? 'Enregistrement...' : (editingId ? 'Enregistrer' : 'Créer le quartier') }}
         </button>
       </div>

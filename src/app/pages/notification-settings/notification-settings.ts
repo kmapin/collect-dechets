@@ -44,6 +44,14 @@ export class NotificationSettingsComponent implements OnInit {
     eventsEnabled: {},
     smtp: {},
   };
+  /** Instantané pris après chargement/enregistrement — griser "Enregistrer" tant
+   * qu'aucun réglage n'a réellement changé. */
+  private originalSettingsSnapshot: string | null = null;
+
+  hasUnsavedChanges(): boolean {
+    if (!this.originalSettingsSnapshot) return true;
+    return JSON.stringify(this.settings) !== this.originalSettingsSnapshot;
+  }
 
   constructor(
     private authService: AuthService,
@@ -83,6 +91,7 @@ export class NotificationSettingsComponent implements OnInit {
           };
         }
         this.isLoading = false;
+        this.originalSettingsSnapshot = JSON.stringify(this.settings);
       },
       error: () => {
         this.isLoading = false;
@@ -111,6 +120,7 @@ export class NotificationSettingsComponent implements OnInit {
     request$.subscribe({
       next: () => {
         this.isSaving = false;
+        this.originalSettingsSnapshot = JSON.stringify(this.settings);
         this.notificationService.showSuccess('Réglages enregistrés', 'La configuration des notifications a été mise à jour.');
       },
       error: () => {

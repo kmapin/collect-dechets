@@ -154,6 +154,12 @@ export class TeamForm implements OnInit, OnChanges {
       this.membersArray.push(this._memberGroup(m.id, m.name, m.phone, m.role));
       this.memberSearches.push('');
     });
+    // patchValue/push ne marquent jamais un contrôle "dirty" (seule une saisie
+    // utilisateur le fait) — mais une édition précédente, annulée sans sauvegarder,
+    // peut avoir laissé le formulaire dirty avant que cette instance ne soit réutilisée
+    // pour une autre équipe (le composant n'est pas recréé entre deux éditions).
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
   }
 
   private _memberGroup(id = '', name = '', phone = '', role: MemberRole = 'collector') {
