@@ -432,7 +432,7 @@ export class PlanningService {
     date: string,
     equipeIds: string[],
     excludePlanningId?: string,
-    extra?: { type?: string; quartierId?: string; secteurId?: string; clientId?: string; groupeId?: string },
+    extra?: { type?: string; villeId?: string; arrondissementId?: string; secteurId?: string; quartierId?: string; clientId?: string; groupeId?: string; serviceLocationId?: string },
   ): Observable<ConflictCheckResponse> {
     const body: any = { date, equipeIds, ...extra };
     if (excludePlanningId) body.excludePlanningId = excludePlanningId;

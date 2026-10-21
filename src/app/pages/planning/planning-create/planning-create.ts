@@ -1158,10 +1158,13 @@ export class PlanningCreate implements OnInit {
       this._dateToApiStr(dateVal), [teamId], this.editId() ?? undefined,
       {
         type: fv['type'],
-        quartierId: fv['quartierId'],
+        villeId: fv['villeId'],
+        arrondissementId: fv['arrondissementId'],
         secteurId: fv['secteurId'],
+        quartierId: fv['quartierId'],
         clientId: fv['clientId'],
         groupeId: this.groupMode() === 'existing' ? this.selectedExistingGroupId() ?? undefined : undefined,
+        serviceLocationId: this.selectedServiceLocationId() ?? undefined,
       },
     ).subscribe({
       next:  res => { this.conflicts.set(res.conflicts ?? []); this.checkingConflicts.set(false); },
