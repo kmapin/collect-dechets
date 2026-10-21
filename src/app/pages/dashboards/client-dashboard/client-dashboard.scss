@@ -1233,6 +1233,21 @@
 }
 /** Grid messagerie end */
 
+// "Actualiser"/"Signaler un problème" (en-tête "Planning de la semaine") — sur un petit
+// écran de PC (fenêtre étroite, pas un mobile), le titre + le bascule Cartes/Tableau +
+// ces 2 boutons texte se chevauchent faute de place. Borné à min-width:769px : en dessous,
+// .section-header passe déjà à la ligne (règle @768px plus bas) et retrouve assez de place
+// pour les libellés complets — l'icône seule ne concerne donc que la zone "petit PC".
+@media (min-width: 769px) and (max-width: 1200px) {
+  .weekly-action-btn span {
+    display: none;
+  }
+
+  .weekly-action-btn {
+    padding: 8px;
+  }
+}
+
 @media (max-width: 1024px) {
   .main-content {
     grid-template-columns: 1fr;

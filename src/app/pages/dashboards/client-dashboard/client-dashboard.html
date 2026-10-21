@@ -150,23 +150,6 @@
                 </p>
               }
             </div>
-
-            <div class="stat-card card">
-              <div class="stat-icon collections">
-                <i class="material-icons">wallet</i>
-              </div>
-              <div class="stat-info">
-                <h3>Wallet</h3>
-                <p class="stat-value">{{ clientBalance | number }} FCFA</p>
-                <button
-                  class="btn btn-secondary btn-small"
-                  (click)="showRechargeModal = true"
-                  >
-                  <i class="material-icons">refresh</i>
-                  Recharger
-                </button>
-              </div>
-            </div>
           </div>
 
           <!-- Contenu principal -->
@@ -219,18 +202,20 @@
                     </button>
                   </div>
                   <button
-                    class="btn btn-secondary btn-small"
+                    class="btn btn-secondary btn-small weekly-action-btn"
                     (click)="refreshCollections()"
+                    title="Actualiser"
                     >
                     <i class="material-icons">refresh</i>
-                    Actualiser
+                    <span>Actualiser</span>
                   </button>
                   <button
-                    class="btn btn-secondary btn-small"
+                    class="btn btn-secondary btn-small weekly-action-btn"
                     (click)="reportIndependentIssue()"
+                    title="Signaler un problème"
                     >
                     <i class="material-icons">report_problem</i>
-                    Signaler un problème
+                    <span>Signaler un problème</span>
                   </button>
                 </div>
 
