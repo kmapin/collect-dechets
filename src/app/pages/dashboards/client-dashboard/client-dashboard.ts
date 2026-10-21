@@ -173,6 +173,16 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   // lutter contre le typage union de Contrat.
   activeSubscription: any = null;
   activeContrat: Contrat | null = null;
+  /** "Prochain paiement" (carte d'accueil) — la prochaine REDEVANCE impayée (en_attente/
+   * retard), jamais `Contrat.endDate` : ce champ ne représente plus une date de paiement
+   * pour un contrat "à la durée" depuis la décision produit "un contrat n'expire jamais
+   * automatiquement" (voir services/contrat.js) — il reste `null` pour ces contrats, ou
+   * n'est plus qu'une date de résiliation manuelle pour un contrat classique, jamais une
+   * échéance de facturation. Un élément par contrat (Modèle C, multi-lieux : un client
+   * peut avoir plusieurs contrats, chacun avec sa propre prochaine échéance), trié par
+   * date croissante — la plus proche en premier. */
+  prochainsPaiements: { contratId: string; agencyId: string; agencyName: string; montant: number; dateEcheance: string }[] = [];
+  afficherMenuPaiements = false;
   eligibility: EligibilityResult | null = null;
   showRechargeModal: boolean = false;
 
@@ -248,6 +258,9 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
         this.loadActiveContrat();
         this.loadEligibility();
       }
+      if (notification?.type === 'Subscribed' || notification?.type === 'Contrat' || notification?.type === 'Redevance') {
+        this.loadProchainsPaiements();
+      }
     });
 
     this.incomingMessageSub = this.conversationService.onIncomingMessage$().subscribe((message: RealtimeMessage) => {
@@ -272,6 +285,7 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
       this.loadUpcomingPlannings();
       this.loadPlanningHistory();
       this.loadPaymentHistory();
+      this.loadProchainsPaiements();
     });
     console.log("Current User", this.currentUser);
   }
@@ -335,11 +349,56 @@ export class ClientDashboard  implements OnInit, AfterViewChecked, OnDestroy {
   @HostListener('document:click')
   surClicDocument(): void {
     this.afficherMenuAgences = false;
+    this.afficherMenuPaiements = false;
   }
 
   contratAgencyName(): string {
     const agency = this.activeContrat?.agencyId as any;
     return typeof agency === 'object' ? agency?.name : '';
+  }
+
+  /** "Prochain paiement" — une entrée par contrat (Modèle C, multi-lieux), prenant la
+   * Redevance impayée (en_attente/retard) à l'échéance la plus proche de ce contrat.
+   * Jamais Contrat.endDate (voir commentaire sur `prochainsPaiements` ci-dessus). */
+  loadProchainsPaiements(): void {
+    const clientId = this.currentUser?._id;
+    if (!clientId) return;
+    this.redevanceService.getRedevancesByClient$(clientId).subscribe({
+      next: (redevances) => {
+        const impayees = redevances.filter((r) => r.status === 'en_attente' || r.status === 'retard');
+        const prochaineParContrat = new Map<string, typeof impayees[number]>();
+        for (const r of impayees) {
+          const contratId = typeof r.contratId === 'object' ? r.contratId._id : r.contratId;
+          const existante = prochaineParContrat.get(contratId);
+          if (!existante || new Date(r.dateEcheance) < new Date(existante.dateEcheance)) {
+            prochaineParContrat.set(contratId, r);
+          }
+        }
+        this.prochainsPaiements = [...prochaineParContrat.entries()]
+          .map(([contratId, r]) => {
+            const agence = r.agencyId as any;
+            return {
+              contratId,
+              agencyId: typeof agence === 'object' ? agence._id : agence,
+              agencyName: typeof agence === 'object' ? (agence.name || 'Agence') : '',
+              montant: r.montant,
+              dateEcheance: r.dateEcheance,
+            };
+          })
+          .sort((a, b) => new Date(a.dateEcheance).getTime() - new Date(b.dateEcheance).getTime());
+      },
+      error: () => {
+        this.prochainsPaiements = [];
+      },
+    });
+  }
+
+  basculerMenuPaiements(): void {
+    this.afficherMenuPaiements = !this.afficherMenuPaiements;
+  }
+
+  fermerMenuPaiements(): void {
+    this.afficherMenuPaiements = false;
   }
 
   /** "Tous vos lieux" = abonnement/contrat "compte entier" (serviceLocationId absent —

@@ -127,30 +127,52 @@
             <div class="stat-icon payment">
               <i class="material-icons">payment</i>
             </div>
-            @if (activeSubscription) {
-              <div
-                class="stat-info"
-                >
+            @if (prochainsPaiements.length > 0) {
+              <div class="stat-info">
                 <h3>Prochain paiement</h3>
                 <p class="stat-value">
-                  {{ getNextPayment( activeSubscription?.endDate) }}
+                  {{ getNextPayment(prochainsPaiements[0].dateEcheance) }}
                 </p>
-                <span class="stat-detail"
-                  >{{ activeSubscription?.pricingId.price }} F CFA</span
-                  >
-                </div>
-              } @else {
-                <p>
-                  Aucun abonnement actif.<br />
-                  @if (showContractContinuityBanner) {
-                  <sub>Vous êtes couvert par votre contrat actif — voir "Mes contrats" ci-dessous.</sub>
-                  } @else {
-                  <sub>Consultez "Mon contrat" ci-dessous pour souscrire.</sub>
+                <span class="stat-detail">
+                  {{ prochainsPaiements[0].montant | number }} F CFA
+                  @if (prochainsPaiements.length > 1) {
+                    — {{ prochainsPaiements[0].agencyName }}
                   }
-                </p>
-              }
-            </div>
+                </span>
+                @if (prochainsPaiements.length > 1) {
+                  <div class="qa-dropdown payment-dropdown" (click)="$event.stopPropagation()">
+                    <button type="button" class="payment-dropdown-toggle" (click)="basculerMenuPaiements()">
+                      + {{ prochainsPaiements.length - 1 }} autre(s)
+                      <i class="material-icons">{{ afficherMenuPaiements ? 'expand_less' : 'expand_more' }}</i>
+                    </button>
+                    @if (afficherMenuPaiements) {
+                      <div class="qa-dropdown-menu payment-dropdown-menu">
+                        @for (p of prochainsPaiements.slice(1); track p.contratId) {
+                          <a routerLink="/contrat" (click)="fermerMenuPaiements()">
+                            <i class="material-icons">payment</i>
+                            <span class="pdm-info">
+                              <span class="pdm-agency">{{ p.agencyName }}</span>
+                              <span class="pdm-date">{{ getNextPayment(p.dateEcheance) }} — {{ p.montant | number }} F CFA</span>
+                            </span>
+                          </a>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <p>
+                Aucune redevance à venir.<br />
+                @if (showContractContinuityBanner) {
+                <sub>Vous êtes couvert par votre contrat actif — voir "Mes contrats" ci-dessous.</sub>
+                } @else {
+                <sub>Consultez "Mon contrat" ci-dessous pour souscrire.</sub>
+                }
+              </p>
+            }
           </div>
+        </div>
 
           <!-- Contenu principal -->
           <div class="main-content">

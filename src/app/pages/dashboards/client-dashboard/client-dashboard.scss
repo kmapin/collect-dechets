@@ -69,6 +69,54 @@
   }
 }
 
+// "Prochain paiement" multi-contrats (Modèle C, multi-lieux) — même structure de menu que
+// .qa-dropdown-menu ci-dessus, avec un déclencheur discret (lien texte) plutôt qu'un
+// .qa-btn plein, pour rester à l'échelle d'une carte stat plutôt que de l'en-tête.
+.payment-dropdown {
+  margin-top: 6px;
+}
+
+.payment-dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-color, #00bcd4);
+  cursor: pointer;
+
+  .material-icons {
+    font-size: 1rem;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.payment-dropdown-menu a {
+  align-items: flex-start;
+}
+
+.pdm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pdm-agency {
+  font-weight: 600;
+}
+
+.pdm-date {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #6b7280);
+  font-weight: 400;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
