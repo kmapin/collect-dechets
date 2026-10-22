@@ -159,6 +159,15 @@ export class PlanningCreate implements OnInit {
 
   hasBlockingConflict = computed<boolean>(() => this.conflicts().some(c => c.blocking));
   hasOnlyWarningConflicts = computed<boolean>(() => this.conflicts().length > 0 && !this.hasBlockingConflict());
+  /** 'client_double_booking' (client déjà planifié ce jour-là, même lieu, via un autre
+   * planning) est volontairement non-bloquant ET présenté comme une simple INFORMATION
+   * (bleu, jamais l'ambre "avertissement" ni le rouge "erreur") — le manager reste seul
+   * juge, voir services/planning.js. Si d'AUTRES types de conflit coexistent (zone,
+   * équipe...), le bandeau garde le ton "avertissement" standard. */
+  hasOnlyInfoConflicts = computed<boolean>(() =>
+    this.conflicts().length > 0 && !this.hasBlockingConflict()
+    && this.conflicts().every(c => c.conflictType === 'client_double_booking')
+  );
 
   // ── Team operations (edit mode) ───────────────────────────────
   teamSaving   = signal(false);

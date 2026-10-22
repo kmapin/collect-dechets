@@ -1355,14 +1355,27 @@ $tr: .2s ease;
 .conflict-banner {
   border: 1.5px solid #fde68a; border-radius: 12px;
   background: #fffbeb; padding: 14px 16px;
-  display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;
+  display: flex; flex-direction: column; gap: 8px; margin:10px 0 20px 0;
 
+  // Bloquant (création impossible) : volontairement PAS rouge — un orange soutenu
+  // marque le sérieux ("il faut agir") sans la connotation "erreur système" du rouge.
   &.conflict-banner--blocking {
-    border-color: #fca5a5;
-    background: #fef2f2;
+    border-color: #fdba74;
+    background: #fff7ed;
 
-    .cb-head { color: $red; }
-    .cb-row { border-top-color: #fecaca; }
+    .cb-head { color: #c2410c; }
+    .cb-row { border-top-color: #fed7aa; }
+  }
+
+  // "client_double_booking" (client déjà planifié ce jour-là, même lieu) : purement
+  // informatif, jamais un avertissement — le bleu évite toute lecture "erreur"/"risque"
+  // (ambre ou rouge), même si la confirmation (case à cocher) reste requise pour avancer.
+  &.conflict-banner--info {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+
+    .cb-head { color: $blue; }
+    .cb-row { border-top-color: #dbeafe; }
   }
 }
 .cb-head {
@@ -1378,7 +1391,7 @@ $tr: .2s ease;
 }
 .cb-team { font-weight: 600; color: $text-1; white-space: nowrap; }
 .cb-msg  { color: $text-2; }
-.cb-hint { margin: 0; font-size: 12px; color: $red; font-weight: 600; }
+.cb-hint { margin: 0; font-size: 12px; color: #c2410c; font-weight: 600; }
 .cb-ack {
   display: flex; align-items: center; gap: 8px;
   font-size: 13px; font-weight: 600; color: $text-1; cursor: pointer;
