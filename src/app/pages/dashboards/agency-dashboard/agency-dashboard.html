@@ -246,7 +246,7 @@
                         </div>
                         <div class="collection-actions">
                           @if ((collecte.status || "").toLowerCase() === "scheduled") {
-                            <button class="action-btn" (click)="trackCollection(collecte._id)">
+                            <button class="action-btn" (click)="trackCollection(collecte)">
                               <i class="material-icons">location_on</i>
                             </button>
                           }
@@ -302,7 +302,7 @@
                           </td>
                           <td class="col-actions">
                             @if ((collecte.status || "").toLowerCase() === "scheduled") {
-                              <button class="action-btn" (click)="trackCollection(collecte._id)" title="Localiser">
+                              <button class="action-btn" (click)="trackCollection(collecte)" title="Localiser">
                                 <i class="material-icons">location_on</i>
                               </button>
                             } @else {
@@ -2551,6 +2551,26 @@
             <p>Aucune collecte n'a encore été enregistrée pour cette agence.</p>
           </div>
         }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- "Localiser" — mini-carte du lieu d'une collecte programmée -->
+@if (showTrackingModal) {
+  <div class="drawer-overlay" appScrollLock (click)="closeTrackingModal()">
+    <div class="drawer-content" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h3>
+          Localiser —
+          {{ trackingCollecte?.clientId?.firstName }} {{ trackingCollecte?.clientId?.lastName }}
+        </h3>
+        <button class="drawer-close-btn" (click)="closeTrackingModal()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <div #trackingMapEl class="tracking-map"></div>
       </div>
     </div>
   </div>

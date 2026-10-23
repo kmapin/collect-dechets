@@ -4397,6 +4397,15 @@ button:disabled {
   padding: 24px;
 }
 
+// "Localiser" (Suivi des Collectes en Temps Réel) — même convention que .profile-map.
+.tracking-map {
+  width: 100%;
+  height: 360px;
+  border-radius: 12px;
+  border: 2px solid var(--medium-gray);
+  z-index: 0;
+}
+
 /* Footer du drawer */
 .drawer-footer {
   display: flex;

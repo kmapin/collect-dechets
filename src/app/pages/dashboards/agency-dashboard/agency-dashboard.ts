@@ -1,4 +1,5 @@
 import { Agency } from "./../../../models/agency.model";
+import * as L from "leaflet";
 import { saveFilters, loadFilters, hasNonDefaultFilters } from "../../../shared/filter-persistence.util";
 import { ScrollLockDirective } from "../../../shared/scroll-lock.directive";
 import { catchError, forkJoin, map, of, switchMap, Subscription } from "rxjs";
@@ -1275,6 +1276,7 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
   ngOnDestroy(): void {
     this.newSignalementSub?.unsubscribe();
     this.incomingMessageSub?.unsubscribe();
+    this.trackingMap?.remove();
   }
   /**Gestion des messages recus par le client connecté */
   countUnreadMessages() {
@@ -2742,10 +2744,76 @@ export class AgencyDashboard implements OnInit, AfterViewChecked, OnDestroy {
     });
   }
 
-  // Action methods
-  trackCollection(collectionId: string): void {
-    // No need to call notificationService.showInfo here, as it's already handled in the template
+  // ── "Localiser" (Suivi des Collectes en Temps Réel) ───────────────────────
+  // Mini-carte Leaflet en lecture seule (même convention que profile.ts/
+  // service-locations.ts) montrant le lieu de la collecte — serviceLocationId.address
+  // en priorité (Phase 7, précis), repli sur clientId.address pour une Collecte créée
+  // avant cette phase. Ni l'un ni l'autre : on informe plutôt que d'ouvrir une carte vide.
+  showTrackingModal = false;
+  trackingCollecte: any = null;
+  private trackingMap?: L.Map;
+  private readonly DEFAULT_MAP_CENTER: [number, number] = [12.3714, -1.5197];
+  @ViewChild('trackingMapEl') set trackingMapEl(el: ElementRef<HTMLDivElement> | undefined) {
+    if (el && !this.trackingMap) this._initTrackingMap(el.nativeElement);
   }
+
+  private _resolveTrackingPosition(collecte: any): { lat: number; lng: number; label: string } | null {
+    const lieu = collecte?.serviceLocationId?.address;
+    if (typeof lieu?.latitude === 'number' && typeof lieu?.longitude === 'number') {
+      return { lat: lieu.latitude, lng: lieu.longitude, label: collecte.serviceLocationId?.name || 'Lieu de service' };
+    }
+    const adresseClient = collecte?.clientId?.address;
+    if (typeof adresseClient?.latitude === 'number' && typeof adresseClient?.longitude === 'number') {
+      return { lat: adresseClient.latitude, lng: adresseClient.longitude, label: 'Domicile du client' };
+    }
+    return null;
+  }
+
+  trackCollection(collecte: any): void {
+    if (!this._resolveTrackingPosition(collecte)) {
+      this.notificationService.showInfo('Position indisponible', "Aucune position GPS n'est enregistrée pour ce client ou ce lieu de service.");
+      return;
+    }
+    this.trackingCollecte = collecte;
+    this.showTrackingModal = true;
+  }
+
+  closeTrackingModal(): void {
+    this.showTrackingModal = false;
+    this.trackingCollecte = null;
+    this.trackingMap?.remove();
+    this.trackingMap = undefined;
+  }
+
+  private _initTrackingMap(container: HTMLDivElement): void {
+    const position = this._resolveTrackingPosition(this.trackingCollecte);
+    const lat = position?.lat ?? this.DEFAULT_MAP_CENTER[0];
+    const lng = position?.lng ?? this.DEFAULT_MAP_CENTER[1];
+
+    this.trackingMap = L.map(container, { center: [lat, lng], zoom: 15, zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap', maxZoom: 19,
+    }).addTo(this.trackingMap);
+
+    const pinIcon = L.icon({
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+    const client = this.trackingCollecte?.clientId;
+    const nomClient = client?.firstName ? `${client.firstName} ${client.lastName}` : 'Client';
+    L.marker([lat, lng], { icon: pinIcon }).addTo(this.trackingMap)
+      .bindPopup(`<strong>${nomClient}</strong><br>${position?.label ?? ''}`)
+      .openPopup();
+
+    setTimeout(() => this.trackingMap?.invalidateSize(), 200);
+  }
+
+  // Action methods
 
   contactClient(clientId: string): void {
     // No need to call notificationService.showInfo here, as it's already handled in the template

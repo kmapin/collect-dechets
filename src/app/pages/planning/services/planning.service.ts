@@ -503,6 +503,12 @@ export class PlanningService {
     );
   }
 
+  /** Annule UNE collecte encore "Scheduled" — jamais le planning entier (voir cancelPlanning).
+   * Réversible via retryCollecte, qui accepte explicitement une collecte "Cancelled". */
+  cancelCollecte(planningId: string, collecteId: string): Observable<any> {
+    return this.http.post<any>(`${this.api}/planning/${planningId}/collectes/${collecteId}/cancel`, {});
+  }
+
   /** Observation/motif d'absence sur UNE Collecte précise — jamais un compteur global. */
   setCollecteObservation(collecteId: string, body: { failureReason?: string; comment?: string }): Observable<any> {
     return this.http.patch<any>(`${this.api}/collectes/${collecteId}/observation`, body);

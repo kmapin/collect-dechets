@@ -110,6 +110,7 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
   missedCollectes   = computed(() => this.collectes().filter(c => c.status === 'Missed'));
   savingObservationId = signal<string | null>(null);
   retryingId          = signal<string | null>(null);
+  cancellingId        = signal<string | null>(null);
 
   readonly failureReasonOptions = Object.entries(FAILURE_REASON_LABELS).map(([value, label]) => ({ value, label }));
   failureReasonLabel(code: string | null): string {
@@ -472,6 +473,35 @@ export class PlanningDetailComponent implements OnInit, AfterViewInit, OnDestroy
       error: (err) => {
         this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.error?.message ?? 'Impossible de retenter cette collecte' });
         this.retryingId.set(null);
+      },
+    });
+  }
+
+  /** Annule UNE collecte encore "Scheduled" (jamais le planning entier, voir cancelPlanning
+   * dans le footer de la page) — réversible via "Replanifier" une fois annulée. */
+  async cancelCollecte(c: PlanningCollecte): Promise<void> {
+    const p = this.planning();
+    if (!p || this.cancellingId()) return;
+    const ok = await this.confirmDialog.confirm({
+      title: 'Annuler cette collecte ?',
+      message: `La collecte de ${c.clientName} prévue aujourd'hui sera annulée. Vous pourrez la replanifier ensuite si besoin.`,
+      variant: 'danger',
+      confirmLabel: 'Annuler la collecte',
+      cancelLabel: 'Retour',
+    });
+    if (!ok) return;
+
+    this.cancellingId.set(c.id);
+    this.svc.cancelCollecte(p.id, c.id).subscribe({
+      next: () => {
+        this.msg.add({ severity: 'warn', summary: 'Collecte annulée', detail: `${c.clientName} a été retiré(e) du planning du jour.` });
+        this._loadCollectes(p.id);
+        this._loadStats(p.id);
+        this.cancellingId.set(null);
+      },
+      error: (err) => {
+        this.msg.add({ severity: 'error', summary: 'Erreur', detail: err?.error?.error?.message ?? 'Impossible d\'annuler cette collecte' });
+        this.cancellingId.set(null);
       },
     });
   }

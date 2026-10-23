@@ -514,10 +514,10 @@
               <div class="incidents-list rc-collecte-list">
                 @for (c of pagedCollectes(); track c.id) {
                   <div class="incident-card"
-                       [style.--ic]="c.status === 'Collected' ? '#16a34a' : c.status === 'Missed' ? '#ef4444' : '#64748b'">
+                       [style.--ic]="c.status === 'Collected' ? '#16a34a' : c.status === 'Missed' ? '#ef4444' : c.status === 'Cancelled' ? '#94a3b8' : '#64748b'">
                     <div class="inc-severity">
-                      <mat-icon [style.color]="c.status === 'Collected' ? '#16a34a' : c.status === 'Missed' ? '#ef4444' : '#64748b'">
-                        {{ c.status === 'Collected' ? 'check_circle' : c.status === 'Missed' ? 'report' : 'schedule' }}
+                      <mat-icon [style.color]="c.status === 'Collected' ? '#16a34a' : c.status === 'Missed' ? '#ef4444' : c.status === 'Cancelled' ? '#94a3b8' : '#64748b'">
+                        {{ c.status === 'Collected' ? 'check_circle' : c.status === 'Missed' ? 'report' : c.status === 'Cancelled' ? 'cancel' : 'schedule' }}
                       </mat-icon>
                     </div>
                     <div class="inc-body">
@@ -533,25 +533,27 @@
                         <span class="rc-client-status"
                               [class.rc-client-status--ok]="c.status === 'Collected'"
                               [class.rc-client-status--ko]="c.status === 'Missed'">
-                          {{ c.status === 'Collected' ? 'Collectée' : c.status === 'Missed' ? 'Manquée' : 'Programmée' }}
+                          {{ c.status === 'Collected' ? 'Collectée' : c.status === 'Missed' ? 'Manquée' : c.status === 'Cancelled' ? 'Annulée' : 'Programmée' }}
                         </span>
                       </div>
-                      @if (c.status === 'Missed') {
+                      @if (c.status === 'Missed' || c.status === 'Cancelled') {
                       <div class="rc-item-fields">
-                        <select [ngModel]="c.failureReason" (ngModelChange)="updateCollecteField(c.id, {failureReason: $event})">
-                          <option [ngValue]="null">Motif d'absence (optionnel)</option>
-                          @for (opt of failureReasonOptions; track opt.value) {
-                            <option [ngValue]="opt.value">{{ opt.label }}</option>
-                          }
-                        </select>
-                        <input type="text" placeholder="Observation…" [ngModel]="c.comment" (ngModelChange)="updateCollecteField(c.id, {comment: $event})" />
-                        <button type="button" class="rc-save-btn" [disabled]="savingObservationId() === c.id" (click)="saveObservation(c)" pTooltip="Enregistrer le motif" tooltipPosition="top">
-                          @if (savingObservationId() === c.id) {
-                            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
-                          } @else {
-                            <mat-icon>save</mat-icon>
-                          }
-                        </button>
+                        @if (c.status === 'Missed') {
+                          <select [ngModel]="c.failureReason" (ngModelChange)="updateCollecteField(c.id, {failureReason: $event})">
+                            <option [ngValue]="null">Motif d'absence (optionnel)</option>
+                            @for (opt of failureReasonOptions; track opt.value) {
+                              <option [ngValue]="opt.value">{{ opt.label }}</option>
+                            }
+                          </select>
+                          <input type="text" placeholder="Observation…" [ngModel]="c.comment" (ngModelChange)="updateCollecteField(c.id, {comment: $event})" />
+                          <button type="button" class="rc-save-btn" [disabled]="savingObservationId() === c.id" (click)="saveObservation(c)" pTooltip="Enregistrer le motif" tooltipPosition="top">
+                            @if (savingObservationId() === c.id) {
+                              <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
+                            } @else {
+                              <mat-icon>save</mat-icon>
+                            }
+                          </button>
+                        }
                         <input
                           type="date"
                           class="rc-retry-date"
@@ -566,6 +568,17 @@
                             <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Replanification…
                           } @else {
                             <mat-icon>replay</mat-icon>Replanifier
+                          }
+                        </button>
+                      </div>
+                      }
+                      @if (c.status === 'Scheduled') {
+                      <div class="rc-item-fields">
+                        <button type="button" class="tb-btn tb-btn--ghost tb-btn--danger" [disabled]="cancellingId() === c.id" (click)="cancelCollecte(c)">
+                          @if (cancellingId() === c.id) {
+                            <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon> Annulation…
+                          } @else {
+                            <mat-icon>cancel</mat-icon>Annuler
                           }
                         </button>
                       </div>
@@ -596,32 +609,44 @@
                           <span class="rc-client-status"
                                 [class.rc-client-status--ok]="c.status === 'Collected'"
                                 [class.rc-client-status--ko]="c.status === 'Missed'">
-                            {{ c.status === 'Collected' ? 'Collectée' : c.status === 'Missed' ? 'Manquée' : 'Programmée' }}
+                            {{ c.status === 'Collected' ? 'Collectée' : c.status === 'Missed' ? 'Manquée' : c.status === 'Cancelled' ? 'Annulée' : 'Programmée' }}
                           </span>
                         </td>
                         <td class="col-actions">
-                          @if (c.status === 'Missed') {
+                          @if (c.status === 'Missed' || c.status === 'Cancelled') {
                             <div class="rc-item-fields rc-item-fields--table">
-                              <select [ngModel]="c.failureReason" (ngModelChange)="updateCollecteField(c.id, {failureReason: $event})">
-                                <option [ngValue]="null">Motif d'absence</option>
-                                @for (opt of failureReasonOptions; track opt.value) {
-                                  <option [ngValue]="opt.value">{{ opt.label }}</option>
-                                }
-                              </select>
-                              <input type="text" placeholder="Observation…" [ngModel]="c.comment" (ngModelChange)="updateCollecteField(c.id, {comment: $event})" />
-                              <button type="button" class="rc-save-btn" [disabled]="savingObservationId() === c.id" (click)="saveObservation(c)" pTooltip="Enregistrer le motif" tooltipPosition="top">
-                                @if (savingObservationId() === c.id) {
-                                  <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
-                                } @else {
-                                  <mat-icon>save</mat-icon>
-                                }
-                              </button>
+                              @if (c.status === 'Missed') {
+                                <select [ngModel]="c.failureReason" (ngModelChange)="updateCollecteField(c.id, {failureReason: $event})">
+                                  <option [ngValue]="null">Motif d'absence</option>
+                                  @for (opt of failureReasonOptions; track opt.value) {
+                                    <option [ngValue]="opt.value">{{ opt.label }}</option>
+                                  }
+                                </select>
+                                <input type="text" placeholder="Observation…" [ngModel]="c.comment" (ngModelChange)="updateCollecteField(c.id, {comment: $event})" />
+                                <button type="button" class="rc-save-btn" [disabled]="savingObservationId() === c.id" (click)="saveObservation(c)" pTooltip="Enregistrer le motif" tooltipPosition="top">
+                                  @if (savingObservationId() === c.id) {
+                                    <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
+                                  } @else {
+                                    <mat-icon>save</mat-icon>
+                                  }
+                                </button>
+                              }
                               <input type="date" class="rc-retry-date" [min]="todayIso" [ngModel]="c.newDate" (ngModelChange)="updateCollecteField(c.id, {newDate: $event})" pTooltip="Nouvelle date prévue" tooltipPosition="top" />
                               <button type="button" class="tb-btn tb-btn--ghost" [disabled]="retryingId() === c.id" (click)="retryCollecte(c)">
                                 @if (retryingId() === c.id) {
                                   <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
                                 } @else {
                                   <mat-icon>replay</mat-icon>Replanifier
+                                }
+                              </button>
+                            </div>
+                          } @else if (c.status === 'Scheduled') {
+                            <div class="rc-item-fields rc-item-fields--table">
+                              <button type="button" class="tb-btn tb-btn--ghost tb-btn--danger" [disabled]="cancellingId() === c.id" (click)="cancelCollecte(c)">
+                                @if (cancellingId() === c.id) {
+                                  <mat-icon style="animation:spin 1s linear infinite">sync</mat-icon>
+                                } @else {
+                                  <mat-icon>cancel</mat-icon>Annuler
                                 }
                               </button>
                             </div>
