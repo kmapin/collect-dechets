@@ -3,14 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { finalize, map } from 'rxjs';
+import { finalize, forkJoin, map } from 'rxjs';
 import { ContratService } from '../../../../../services/contrat.service';
 import { RedevanceService } from '../../../../../services/redevance.service';
 import { Contrat } from '../../../../../models/contrat.model';
 import { Redevance } from '../../../../../models/redevance.model';
-import { ApercuPaiementGroupe, PaiementGroupeRedevance, ReductionType } from '../../../../../models/paiement-groupe-redevance.model';
+import { PaiementGroupeRedevance, ReductionType } from '../../../../../models/paiement-groupe-redevance.model';
 import { formatFrDate } from '../../../../../shared/format.util';
 import { ScrollLockDirective } from '../../../../../shared/scroll-lock.directive';
+import { DraggableDirective } from '../../../../../shared/draggable.directive';
 import { aLaPermission } from '../../models';
 import { SESSION_SERVICE } from '../../data-access/tokens/session.token';
 import { NotificationService } from '../../../../../services/notification.service';
@@ -21,27 +22,28 @@ import { badgeRedevance } from '../../shared/status-badge/status-badge.util';
 
 type FiltreStatutRedevance = 'Tous' | 'en_attente' | 'retard' | 'paye' | 'annule' | 'echec';
 
-/** Formulaire "Paiement manuel" — remplace l'ancienne simple confirmation
- * ("Marquer comme payée" / "Marquer payé (manuel)") : l'agence saisit ce qu'elle a
- * réellement constaté (date, somme reçue, commentaire libre), au lieu d'un paiement
- * implicitement daté d'aujourd'hui et pour le montant dû/à payer pile. */
+/** Formulaire "Paiement manuel" — date, somme reçue, commentaire libre. */
 interface PaiementManuelForm {
   datePaiement: string;
   montantRecu: number;
   commentaire: string;
 }
 
-/** Même drawer pour les deux cas : une redevance individuelle, ou un lot de paiement
- * groupé — seul le libellé affiché et l'endpoint appelé diffèrent (voir
- * onConfirmerPaiementManuel). */
+/**
+ * Drawer unifié pour trois cas :
+ * - redevance individuelle (clic sur l'icône paiement d'une ligne)
+ * - groupe (proposition active créée antérieurement)
+ * - selection (1..N redevances cochées → bouton "Payer" de la barre)
+ */
 type CiblePaiementManuel =
   | { type: 'redevance'; redevance: Redevance }
-  | { type: 'groupe'; proposition: PaiementGroupeRedevance };
+  | { type: 'groupe'; proposition: PaiementGroupeRedevance }
+  | { type: 'selection'; redevances: Redevance[] };
 
 @Component({
   selector: 'app-redevances',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent, ScrollLockDirective],
+  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, StatusBadgeComponent, ScrollLockDirective, DraggableDirective],
   templateUrl: './redevances.component.html',
   styleUrl: './redevances.component.scss',
 })
@@ -54,9 +56,6 @@ export class RedevancesComponent {
   private readonly confirmDialog = inject(ConfirmDialogService);
 
   private readonly currentUser = toSignal(this.session.currentUser$, { initialValue: this.session.getCurrentUser() });
-  // Droit dédié, distinct de 'contracts.manage' (résiliation/suspension/réactivation,
-  // géré par contracts.component.ts) — tout ce que cette page gate (paiement groupé,
-  // paiement manuel d'une redevance) est une action de paiement, pas de gestion de contrat.
   readonly peutPayerManuel = computed(() => aLaPermission(this.currentUser(), 'contracts.pay_manual'));
 
   readonly badgeRedevance = badgeRedevance;
@@ -67,17 +66,6 @@ export class RedevancesComponent {
     { initialValue: this.route.snapshot.paramMap.get('contratId') ?? '' },
   );
 
-  /** Lien "retour" du haut de page — par défaut la liste des Contrats, mais chaque
-   * origine réelle du bouton "Paiement manuel" doit ramener à CETTE origine, pas
-   * systématiquement à la fiche client :
-   * - `?depuis=client&idClient=...` : onglet Facturation de la fiche client (voir
-   *   billing-tab.component.ts::allerVersPaiementManuel) — rouvre sur l'onglet
-   *   Facturation, pas sur Informations par défaut (voir client-sheet.component.ts).
-   * - `?depuis=suivi-mensuel&mois=...&annee=...` : page Suivi mensuel (voir
-   *   monthly-tracking.component.ts::allerVersPaiementManuel) — rouvre sur le MÊME
-   *   mois consulté, pas sur le mois courant par défaut.
-   * Dérivé des query params plutôt que de l'historique du navigateur : fonctionne
-   * aussi après un rechargement de page. */
   private readonly queryParamMap = toSignal(
     this.route.queryParamMap,
     { initialValue: this.route.snapshot.queryParamMap },
@@ -119,8 +107,6 @@ export class RedevancesComponent {
     return filtre === 'Tous' ? liste : liste.filter(r => r.status === filtre);
   });
 
-  // Résumé — même calcul que RedevanceService.getResumeClientContrat côté backend,
-  // fait ici directement sur la liste déjà chargée (évite un second aller-retour réseau).
   readonly resume = computed(() => {
     const liste = this.redevances();
     const montantDu = liste
@@ -134,21 +120,44 @@ export class RedevancesComponent {
     };
   });
 
-  readonly redevanceEnCours = signal<string | null>(null);
-
-  // ── Paiement groupé + réduction (repris de contracts.component.ts) ─────────
+  // ── Proposition groupée active (créée lors d'une session précédente) ──
   readonly paiementGroupeActif = signal<PaiementGroupeRedevance | null>(null);
-  readonly showPaiementGroupeForm = signal(false);
-  readonly paiementGroupeApercu = signal<ApercuPaiementGroupe | null>(null);
-  readonly chargementApercu = signal(false);
-  readonly paiementGroupeForm = signal<{ genererTout: boolean; reductionType: ReductionType; reductionValeur: number }>({
-    genererTout: false,
-    reductionType: 'pourcentage',
-    reductionValeur: 0,
-  });
   readonly paiementGroupeEnCours = signal(false);
 
-  // ── Paiement manuel (redevance individuelle OU lot groupé) ─────────────────
+  // ── Sélection pour paiement (checkboxes dans le tableau) ──────────────
+  readonly selectedIds = signal<Set<string>>(new Set());
+  /** Réduction optionnelle activable dans le drawer de sélection. */
+  readonly avecReduction = signal(false);
+  readonly reductionForm = signal<{ type: ReductionType; valeur: number }>({ type: 'pourcentage', valeur: 0 });
+
+  readonly selectionCount = computed(() => this.selectedIds().size);
+
+  readonly selectionMontant = computed(() => {
+    const ids = this.selectedIds();
+    return this.redevances()
+      .filter(r => ids.has(r._id))
+      .reduce((acc, r) => acc + r.montant, 0);
+  });
+
+  /** Prévisualisation côté frontend du montant après réduction sur la sélection —
+   *  le backend recalcule et fait foi à la création réelle. */
+  readonly montantApresReductionSelection = computed(() => {
+    const base = this.selectionMontant();
+    const { type, valeur } = this.reductionForm();
+    const reduction = type === 'pourcentage'
+      ? Math.round(base * ((valeur || 0) / 100))
+      : (valeur || 0);
+    return Math.max(0, base - Math.min(reduction, base));
+  });
+
+  readonly toutesImpayeesSelectionnees = computed(() => {
+    const impayees = this.redevances().filter(r => r.status === 'en_attente' || r.status === 'retard');
+    if (impayees.length === 0) return false;
+    const ids = this.selectedIds();
+    return impayees.every(r => ids.has(r._id));
+  });
+
+  // ── Paiement manuel (drawer unifié) ───────────────────────────────────
   readonly showPaiementManuelDrawer = signal(false);
   readonly paiementManuelCible = signal<CiblePaiementManuel | null>(null);
   readonly paiementManuelForm = signal<PaiementManuelForm>({ datePaiement: '', montantRecu: 0, commentaire: '' });
@@ -222,7 +231,7 @@ export class RedevancesComponent {
     return typeof lieu === 'object' && lieu ? lieu.name : 'Tous les lieux';
   }
 
-  // ── Paiement groupé + réduction ─────────────────────────────────────────
+  // ── Proposition groupée active (session précédente) ────────────────────
 
   private chargerPaiementGroupeActif(): void {
     this.redevanceService.getPropositionActivePaiementGroupe$(this.contratId()).subscribe({
@@ -231,74 +240,15 @@ export class RedevancesComponent {
     });
   }
 
-  ouvrirFormPaiementGroupe(): void {
-    this.paiementGroupeForm.set({ genererTout: false, reductionType: 'pourcentage', reductionValeur: 0 });
-    this.paiementGroupeApercu.set(null);
-    this.showPaiementGroupeForm.set(true);
-    this.chargerApercuPaiementGroupe();
-  }
-
-  fermerFormPaiementGroupe(): void {
-    this.showPaiementGroupeForm.set(false);
-    this.paiementGroupeApercu.set(null);
-  }
-
-  setGenererTout(genererTout: boolean): void {
-    this.paiementGroupeForm.update(v => ({ ...v, genererTout }));
-    this.chargerApercuPaiementGroupe();
-  }
-
-  setReductionType(reductionType: ReductionType): void {
-    this.paiementGroupeForm.update(v => ({ ...v, reductionType }));
-  }
-
-  setReductionValeur(reductionValeur: number): void {
-    this.paiementGroupeForm.update(v => ({ ...v, reductionValeur }));
-  }
-
-  chargerApercuPaiementGroupe(): void {
-    this.chargementApercu.set(true);
-    this.redevanceService.apercuPaiementGroupe$(this.contratId(), this.paiementGroupeForm().genererTout).subscribe({
-      next: apercu => {
-        this.paiementGroupeApercu.set(apercu);
-        this.chargementApercu.set(false);
-      },
-      error: (err: any) => {
-        this.chargementApercu.set(false);
-        this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible de calculer l'aperçu.");
-      },
+  /** Ouvre le drawer sur la proposition active existante. */
+  ouvrirPaiementManuelGroupe(proposition: PaiementGroupeRedevance): void {
+    this.paiementManuelCible.set({ type: 'groupe', proposition });
+    this.paiementManuelForm.set({
+      datePaiement: this.dateDuJour,
+      montantRecu: proposition.montantAPayer,
+      commentaire: '',
     });
-  }
-
-  /** Montant réellement à payer après réduction, calculé côté frontend pour un aperçu
-   * immédiat pendant la saisie — le backend recalcule et fait foi à la création réelle
-   * (services/paiementGroupe.js::_calculerReduction), jamais fait confiance ici seul. */
-  montantApresReductionApercu(): number {
-    const apercu = this.paiementGroupeApercu();
-    const { reductionType, reductionValeur } = this.paiementGroupeForm();
-    if (!apercu) return 0;
-    const total = apercu.montantTotal;
-    const reduction = reductionType === 'pourcentage'
-      ? Math.round(total * ((reductionValeur || 0) / 100))
-      : (reductionValeur || 0);
-    return Math.max(0, total - Math.min(reduction, total));
-  }
-
-  onCreerPropositionPaiementGroupe(): void {
-    if (this.paiementGroupeEnCours()) return;
-    const { genererTout, reductionType, reductionValeur } = this.paiementGroupeForm();
-    this.paiementGroupeEnCours.set(true);
-    this.redevanceService.creerPropositionPaiementGroupe$(this.contratId(), { genererTout, reductionType, reductionValeur })
-      .pipe(finalize(() => this.paiementGroupeEnCours.set(false)))
-      .subscribe({
-        next: (res) => {
-          this.notificationService.showSuccess('Succès', 'Proposition de paiement groupé créée. Le client a été notifié.');
-          this.paiementGroupeActif.set(res.proposition);
-          this.showPaiementGroupeForm.set(false);
-          this.chargerRedevances(); // recharge les redevances (générées si genererTout)
-        },
-        error: (err: any) => this.notificationService.showError('Erreur', err?.error?.message ?? 'Impossible de créer la proposition de paiement groupé.'),
-      });
+    this.showPaiementManuelDrawer.set(true);
   }
 
   async onAnnulerPaiementGroupe(): Promise<void> {
@@ -324,21 +274,75 @@ export class RedevancesComponent {
       });
   }
 
-  /** Ouvre le même drawer "Paiement manuel" que ouvrirPaiementManuel() ci-dessous, pour le
-   * lot entier plutôt qu'une redevance isolée — remplace l'ancienne simple confirmation
-   * "Marquer payé (manuel)". */
-  ouvrirPaiementManuelGroupe(proposition: PaiementGroupeRedevance): void {
-    this.paiementManuelCible.set({ type: 'groupe', proposition });
+  // ── Sélection checkboxes ───────────────────────────────────────────────
+
+  toggleSelection(id: string): void {
+    this.selectedIds.update(s => {
+      const next = new Set(s);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  effacerSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  toggleToutImpayees(): void {
+    const impayees = this.redevances().filter(r => r.status === 'en_attente' || r.status === 'retard');
+    if (this.toutesImpayeesSelectionnees()) {
+      this.selectedIds.set(new Set());
+    } else {
+      this.selectedIds.set(new Set(impayees.map(r => r._id)));
+    }
+  }
+
+  /** Ouvre le drawer unifié pour la sélection courante. */
+  ouvrirPayerSelection(): void {
+    const ids = this.selectedIds();
+    const selected = this.redevances().filter(r => ids.has(r._id));
+    if (!selected.length) return;
+    this.paiementManuelCible.set({ type: 'selection', redevances: selected });
+    this.avecReduction.set(false);
+    this.reductionForm.set({ type: 'pourcentage', valeur: 0 });
     this.paiementManuelForm.set({
       datePaiement: this.dateDuJour,
-      montantRecu: proposition.montantAPayer,
+      montantRecu: selected.reduce((acc, r) => acc + r.montant, 0),
       commentaire: '',
     });
     this.showPaiementManuelDrawer.set(true);
   }
 
-  // ── Paiement manuel d'une redevance (remplace "Marquer comme payée") ───────
+  toggleReduction(checked: boolean): void {
+    this.avecReduction.set(checked);
+    if (checked) {
+      this.paiementManuelForm.update(v => ({ ...v, montantRecu: this.montantApresReductionSelection() }));
+    } else {
+      const cible = this.paiementManuelCible();
+      if (cible?.type === 'selection') {
+        const sel = (cible as { type: 'selection'; redevances: Redevance[] }).redevances;
+        this.paiementManuelForm.update(v => ({ ...v, montantRecu: sel.reduce((a, r) => a + r.montant, 0) }));
+      }
+    }
+  }
 
+  setReductionType(type: ReductionType): void {
+    this.reductionForm.update(v => ({ ...v, type }));
+    if (this.avecReduction()) {
+      this.paiementManuelForm.update(v => ({ ...v, montantRecu: this.montantApresReductionSelection() }));
+    }
+  }
+
+  setReductionValeur(valeur: number): void {
+    this.reductionForm.update(v => ({ ...v, valeur }));
+    if (this.avecReduction()) {
+      this.paiementManuelForm.update(v => ({ ...v, montantRecu: this.montantApresReductionSelection() }));
+    }
+  }
+
+  // ── Drawer paiement manuel ─────────────────────────────────────────────
+
+  /** Raccourci direct sur une ligne individuelle (clic icône). */
   ouvrirPaiementManuel(redevance: Redevance): void {
     this.paiementManuelCible.set({ type: 'redevance', redevance });
     this.paiementManuelForm.set({
@@ -366,11 +370,14 @@ export class RedevancesComponent {
     this.paiementManuelForm.update(v => ({ ...v, commentaire }));
   }
 
-  /** Formulaire incomplet (date ou somme manquante/invalide) — désactive le bouton de
-   * confirmation plutôt que de laisser l'agence soumettre puis découvrir l'erreur. */
   paiementManuelInvalide(): boolean {
     const { datePaiement, montantRecu } = this.paiementManuelForm();
-    return !datePaiement || !montantRecu || montantRecu <= 0 || datePaiement > this.dateDuJour;
+    if (!datePaiement || datePaiement > this.dateDuJour) return true;
+    const cible = this.paiementManuelCible();
+    // Sélection sans réduction : chaque redevance est payée pour son propre montant,
+    // le champ "somme reçue" n'est pas affiché — seule la date est requise.
+    if (cible?.type === 'selection' && !this.avecReduction()) return false;
+    return !montantRecu || montantRecu <= 0;
   }
 
   onConfirmerPaiementManuel(): void {
@@ -378,11 +385,12 @@ export class RedevancesComponent {
     const cible = this.paiementManuelCible();
     if (!cible) return;
     const { datePaiement, montantRecu, commentaire } = this.paiementManuelForm();
-    const payload = { datePaiement, montantRecu, commentaire: commentaire.trim() || undefined };
+    const commentaireTrimmed = commentaire.trim() || undefined;
 
     const onSuccess = () => {
       this.notificationService.showSuccess('Succès', 'Paiement enregistré.');
       this.fermerPaiementManuel();
+      this.selectedIds.set(new Set());
       this.chargerRedevances();
       if (cible.type === 'groupe') this.paiementGroupeActif.set(null);
     };
@@ -390,17 +398,53 @@ export class RedevancesComponent {
       this.notificationService.showError('Erreur', err?.error?.message ?? "Impossible d'enregistrer ce paiement.");
 
     this.paiementManuelEnCours.set(true);
-    // Deux observables de formes différentes (redevance vs proposition) — branché en
-    // entier plutôt qu'unifié dans une variable commune, TypeScript ne pouvant pas
-    // réconcilier leurs signatures Observer respectives dans un seul `.subscribe()`.
+
     if (cible.type === 'redevance') {
-      this.redevanceService.payerRedevance$(cible.redevance._id, payload)
+      this.redevanceService.payerRedevance$(cible.redevance._id, { datePaiement, montantRecu, commentaire: commentaireTrimmed })
         .pipe(finalize(() => this.paiementManuelEnCours.set(false)))
         .subscribe({ next: onSuccess, error: onError });
+
+    } else if (cible.type === 'groupe') {
+      this.redevanceService.payerManuelPaiementGroupe$(cible.proposition._id, { datePaiement, montantRecu, commentaire: commentaireTrimmed })
+        .pipe(finalize(() => this.paiementManuelEnCours.set(false)))
+        .subscribe({ next: onSuccess, error: onError });
+
     } else {
-      this.redevanceService.payerManuelPaiementGroupe$(cible.proposition._id, payload)
-        .pipe(finalize(() => this.paiementManuelEnCours.set(false)))
-        .subscribe({ next: onSuccess, error: onError });
+      // Sélection
+      if (this.avecReduction()) {
+        // Passe les ids sélectionnés — le backend valide qu'ils appartiennent
+        // au contrat et sont bien impayés, puis applique la réduction uniquement sur eux.
+        const { type, valeur } = this.reductionForm();
+        this.redevanceService.creerPropositionPaiementGroupe$(this.contratId(), {
+          genererTout: false,
+          reductionType: type,
+          reductionValeur: valeur,
+          redevanceIds: cible.redevances.map(r => r._id),
+        }).subscribe({
+          next: (res) => {
+            this.redevanceService.payerManuelPaiementGroupe$(res.proposition._id, {
+              datePaiement, montantRecu, commentaire: commentaireTrimmed,
+            }).pipe(finalize(() => this.paiementManuelEnCours.set(false)))
+              .subscribe({ next: onSuccess, error: onError });
+          },
+          error: (err) => {
+            this.paiementManuelEnCours.set(false);
+            onError(err);
+          },
+        });
+      } else {
+        // Paiement individuel en parallèle pour chaque redevance sélectionnée
+        forkJoin(
+          cible.redevances.map(r =>
+            this.redevanceService.payerRedevance$(r._id, {
+              datePaiement,
+              montantRecu: r.montant,
+              commentaire: commentaireTrimmed,
+            })
+          )
+        ).pipe(finalize(() => this.paiementManuelEnCours.set(false)))
+          .subscribe({ next: () => onSuccess(), error: onError });
+      }
     }
   }
 }

@@ -44,66 +44,22 @@
       </div>
     </div>
 
-    <!-- Paiement groupé + réduction -->
-    <div class="fin-redevances__paiement-groupe" *ngIf="peutPayerManuel()">
-      <ng-container *ngIf="paiementGroupeActif() as proposition; else pasDePropositionActive">
-        <div class="fin-redevances__pg-card">
-          <div class="fin-redevances__pg-header">
-            <i class="material-icons" aria-hidden="true">local_offer</i>
-            <strong>Proposition de paiement groupé en attente</strong>
-          </div>
-          <p>{{ proposition.redevanceIds.length }} redevance(s) — {{ proposition.montantTotalAvantReduction }} FCFA
-            <ng-container *ngIf="proposition.montantReduction > 0"> − {{ proposition.montantReduction }} FCFA de réduction</ng-container>
-            = <strong>{{ proposition.montantAPayer }} FCFA</strong> à payer
-          </p>
-          <div class="fin-redevances__pg-actions">
-            <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="ouvrirPaiementManuelGroupe(proposition)">Paiement manuel</button>
-            <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
-          </div>
-        </div>
-      </ng-container>
-      <ng-template #pasDePropositionActive>
-        <button *ngIf="!showPaiementGroupeForm()" type="button" class="btn btn-secondary" (click)="ouvrirFormPaiementGroupe()">
+    <!-- Proposition groupée active (créée lors d'une session précédente) -->
+    <div class="fin-redevances__paiement-groupe" *ngIf="peutPayerManuel() && paiementGroupeActif() as proposition">
+      <div class="fin-redevances__pg-card">
+        <div class="fin-redevances__pg-header">
           <i class="material-icons" aria-hidden="true">local_offer</i>
-          Configurer un paiement groupé
-        </button>
-
-        <div class="fin-redevances__pg-card" *ngIf="showPaiementGroupeForm()">
-          <div class="fin-redevances__pg-header">
-            <strong>Nouvelle proposition de paiement groupé</strong>
-          </div>
-
-          <label class="fin-redevances__pg-checkbox">
-            <input type="checkbox" [checked]="paiementGroupeForm().genererTout" (change)="setGenererTout($any($event.target).checked)" />
-            Générer aussi les échéances futures jusqu'à la fin du contrat
-          </label>
-
-          <div class="fin-redevances__pg-row">
-            <label>
-              Réduction
-              <select [ngModel]="paiementGroupeForm().reductionType" (ngModelChange)="setReductionType($event)">
-                <option value="pourcentage">Pourcentage (%)</option>
-                <option value="montant">Montant fixe (FCFA)</option>
-              </select>
-            </label>
-            <label>
-              Valeur
-              <input type="number" min="0" [ngModel]="paiementGroupeForm().reductionValeur" (ngModelChange)="setReductionValeur($event)" />
-            </label>
-          </div>
-
-          <app-loading-spinner *ngIf="chargementApercu()" message="Calcul de l'aperçu..." size="small" />
-          <p class="fin-redevances__pg-apercu" *ngIf="!chargementApercu() && paiementGroupeApercu() as apercu">
-            Total : {{ apercu.montantTotal }} FCFA → <strong>{{ montantApresReductionApercu() }} FCFA</strong> après réduction
-            ({{ apercu.redevancesExistantes.length + apercu.redevancesAGenerer.length }} redevance(s))
-          </p>
-
-          <div class="fin-redevances__pg-actions">
-            <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="onCreerPropositionPaiementGroupe()">Créer la proposition</button>
-            <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="fermerFormPaiementGroupe()">Annuler</button>
-          </div>
+          <strong>Proposition de paiement groupé en attente</strong>
         </div>
-      </ng-template>
+        <p>{{ proposition.redevanceIds.length }} redevance(s) — {{ proposition.montantTotalAvantReduction }} FCFA
+          <ng-container *ngIf="proposition.montantReduction > 0"> − {{ proposition.montantReduction }} FCFA de réduction</ng-container>
+          = <strong>{{ proposition.montantAPayer }} FCFA</strong> à payer
+        </p>
+        <div class="fin-redevances__pg-actions">
+          <button type="button" class="btn btn-primary" [disabled]="paiementGroupeEnCours()" (click)="ouvrirPaiementManuelGroupe(proposition)">Paiement manuel</button>
+          <button type="button" class="btn btn-outline" [disabled]="paiementGroupeEnCours()" (click)="onAnnulerPaiementGroupe()">Annuler la proposition</button>
+        </div>
+      </div>
     </div>
 
     <!-- Filtres par statut -->
@@ -120,6 +76,16 @@
       <table class="fin-redevances__table">
         <thead>
           <tr>
+            <!-- Colonne checkbox "tout sélectionner" (impayées uniquement) -->
+            <th *ngIf="peutPayerManuel() && !paiementGroupeActif()" scope="col" class="fin-redevances__checkbox-col">
+              <input
+                type="checkbox"
+                [checked]="toutesImpayeesSelectionnees()"
+                (change)="toggleToutImpayees()"
+                title="Sélectionner toutes les redevances impayées"
+                aria-label="Sélectionner toutes les redevances impayées"
+              />
+            </th>
             <th scope="col">Période</th>
             <th scope="col">Échéance</th>
             <th scope="col">Montant</th>
@@ -131,7 +97,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let redevance of redevancesFiltrees()">
+          <tr
+            *ngFor="let redevance of redevancesFiltrees()"
+            [class.fin-redevances__row--selected]="selectedIds().has(redevance._id)"
+          >
+            <!-- Checkbox par ligne -->
+            <td *ngIf="peutPayerManuel() && !paiementGroupeActif()" class="fin-redevances__checkbox-col">
+              <input
+                *ngIf="redevance.status === 'en_attente' || redevance.status === 'retard'"
+                type="checkbox"
+                [checked]="selectedIds().has(redevance._id)"
+                (change)="toggleSelection(redevance._id)"
+                [attr.aria-label]="'Sélectionner ' + redevance.periodLabel"
+              />
+            </td>
             <td data-label="Période">{{ redevance.periodLabel }}</td>
             <td data-label="Échéance">{{ formatDate(redevance.dateEcheance) }}</td>
             <td data-label="Montant">{{ redevance.montant }} FCFA</td>
@@ -146,7 +125,7 @@
                 *ngIf="redevance.status === 'en_attente' || redevance.status === 'retard'"
                 type="button"
                 class="fin-redevances__action-btn"
-                [disabled]="!!redevanceEnCours()"
+                [disabled]="!!paiementGroupeActif()"
                 (click)="ouvrirPaiementManuel(redevance)"
                 title="Enregistrer un paiement manuel"
               >
@@ -166,7 +145,27 @@
     </div>
   </ng-container>
 
-  <!-- Drawer "Paiement manuel" — remplace l'ancienne simple confirmation "Marquer comme payée" -->
+  <!-- Barre d'action flottante — apparaît dès qu'une redevance est cochée -->
+  <div
+    class="fin-redevances__selection-bar"
+    *ngIf="peutPayerManuel() && selectionCount() > 0 && !paiementGroupeActif()"
+    role="toolbar"
+    aria-label="Actions sur la sélection"
+    appDraggable
+  >
+    <span class="fin-redevances__selection-bar-info">
+      <strong>{{ selectionCount() }}</strong> sélectionnée(s) · <strong>{{ selectionMontant() }} FCFA</strong>
+    </span>
+    <button type="button" class="btn btn-primary" (click)="ouvrirPayerSelection()">
+      <i class="material-icons" aria-hidden="true">payments</i>
+      Payer
+    </button>
+    <button type="button" class="fin-redevances__selection-bar-clear" (click)="effacerSelection()" aria-label="Désélectionner tout">
+      <i class="material-icons" aria-hidden="true">close</i>
+    </button>
+  </div>
+
+  <!-- Drawer "Paiement manuel" (unifié — redevance individuelle, groupe actif, ou sélection) -->
   <div class="fin-redevances__drawer-overlay" appScrollLock *ngIf="showPaiementManuelDrawer()">
     <div class="fin-redevances__drawer" (click)="$event.stopPropagation()">
       <div class="fin-redevances__drawer-header">
@@ -175,14 +174,63 @@
           <i class="material-icons" aria-hidden="true">close</i>
         </button>
       </div>
+
       <div class="fin-redevances__drawer-body" *ngIf="paiementManuelCible() as cible">
+
+        <!-- ══ CAS : SÉLECTION ══ -->
+        <ng-container *ngIf="cible.type === 'selection'">
+          <!-- Récap des lignes sélectionnées -->
+          <div class="fin-redevances__selection-recap">
+            <div class="fin-redevances__selection-line" *ngFor="let r of $any(cible).redevances">
+              <span>{{ r.periodLabel }}</span>
+              <span class="fin-redevances__selection-line-amount">{{ r.montant }} FCFA</span>
+            </div>
+            <div class="fin-redevances__selection-total">
+              <span>Total sélectionné</span>
+              <strong>{{ selectionMontant() }} FCFA</strong>
+            </div>
+          </div>
+
+          <!-- Toggle réduction -->
+          <div class="fin-redevances__form-group">
+            <label class="fin-redevances__checkbox-label">
+              <input type="checkbox" [checked]="avecReduction()" (change)="toggleReduction($any($event.target).checked)" />
+              Appliquer une réduction
+            </label>
+          </div>
+
+          <!-- Champs réduction (si activé) -->
+          <ng-container *ngIf="avecReduction()">
+            <div class="fin-redevances__pg-row">
+              <label>
+                Réduction
+                <select [ngModel]="reductionForm().type" (ngModelChange)="setReductionType($event)">
+                  <option value="pourcentage">Pourcentage (%)</option>
+                  <option value="montant">Montant fixe (FCFA)</option>
+                </select>
+              </label>
+              <label>
+                Valeur
+                <input type="number" min="0" [ngModel]="reductionForm().valeur" (ngModelChange)="setReductionValeur($event)" />
+              </label>
+            </div>
+            <p class="fin-redevances__pg-apercu">
+              Sélection : {{ selectionMontant() }} FCFA → <strong>{{ montantApresReductionSelection() }} FCFA</strong> après réduction
+            </p>
+          </ng-container>
+        </ng-container>
+
+        <!-- ══ CAS : REDEVANCE INDIVIDUELLE ══ -->
         <p class="fin-redevances__hint" *ngIf="cible.type === 'redevance'">
-          Période : <strong>{{ cible.redevance.periodLabel }}</strong> · Montant dû : <strong>{{ cible.redevance.montant }} FCFA</strong>
-        </p>
-        <p class="fin-redevances__hint" *ngIf="cible.type === 'groupe'">
-          Paiement groupé — <strong>{{ cible.proposition.redevanceIds.length }} redevance(s)</strong> · Montant à payer : <strong>{{ cible.proposition.montantAPayer }} FCFA</strong>
+          Période : <strong>{{ $any(cible).redevance.periodLabel }}</strong> · Montant dû : <strong>{{ $any(cible).redevance.montant }} FCFA</strong>
         </p>
 
+        <!-- ══ CAS : PROPOSITION GROUPÉE ACTIVE ══ -->
+        <p class="fin-redevances__hint" *ngIf="cible.type === 'groupe'">
+          Paiement groupé — <strong>{{ $any(cible).proposition.redevanceIds.length }} redevance(s)</strong> · Montant à payer : <strong>{{ $any(cible).proposition.montantAPayer }} FCFA</strong>
+        </p>
+
+        <!-- ══ CHAMPS COMMUNS ══ -->
         <div class="fin-redevances__form-group">
           <label>Client</label>
           <input type="text" [value]="contrat() ? contratClientName(contrat()!) : ''" disabled />
@@ -199,7 +247,9 @@
           />
         </div>
 
-        <div class="fin-redevances__form-group">
+        <!-- Somme reçue — masquée pour sélection sans réduction (chaque redevance
+             est payée pour son propre montant, pas de montant global à saisir) -->
+        <div class="fin-redevances__form-group" *ngIf="cible.type !== 'selection' || avecReduction()">
           <label for="paiement-montant">Somme reçue (FCFA) *</label>
           <input
             id="paiement-montant"
@@ -208,11 +258,13 @@
             [ngModel]="paiementManuelForm().montantRecu"
             (ngModelChange)="setMontantRecu($event)"
           />
-          <p class="fin-redevances__hint" *ngIf="cible.type === 'redevance' && paiementManuelForm().montantRecu && paiementManuelForm().montantRecu !== cible.redevance.montant">
-            Différent du montant dû ({{ cible.redevance.montant }} FCFA) — un règlement partiel ou une surcharge sera enregistré tel quel.
+          <p class="fin-redevances__hint"
+            *ngIf="cible.type === 'redevance' && paiementManuelForm().montantRecu && paiementManuelForm().montantRecu !== $any(cible).redevance.montant">
+            Différent du montant dû ({{ $any(cible).redevance.montant }} FCFA) — un règlement partiel ou une surcharge sera enregistré tel quel.
           </p>
-          <p class="fin-redevances__hint" *ngIf="cible.type === 'groupe' && paiementManuelForm().montantRecu && paiementManuelForm().montantRecu !== cible.proposition.montantAPayer">
-            Différent du montant à payer ({{ cible.proposition.montantAPayer }} FCFA) — enregistré tel quel.
+          <p class="fin-redevances__hint"
+            *ngIf="cible.type === 'groupe' && paiementManuelForm().montantRecu && paiementManuelForm().montantRecu !== $any(cible).proposition.montantAPayer">
+            Différent du montant à payer ({{ $any(cible).proposition.montantAPayer }} FCFA) — enregistré tel quel.
           </p>
         </div>
 
@@ -228,6 +280,7 @@
           ></textarea>
         </div>
       </div>
+
       <div class="fin-redevances__drawer-footer">
         <button type="button" class="btn btn-outline" (click)="fermerPaiementManuel()">Annuler</button>
         <button

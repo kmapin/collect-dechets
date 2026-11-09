@@ -112,7 +112,7 @@ export class RedevanceService {
 
   creerPropositionPaiementGroupe$(
     contratId: string,
-    payload: { genererTout: boolean; reductionType: ReductionType; reductionValeur: number },
+    payload: { genererTout: boolean; reductionType: ReductionType; reductionValeur: number; redevanceIds?: string[] },
   ): Observable<{ message: string; proposition: PaiementGroupeRedevance }> {
     return this.http.post<any>(`${environment.apiUrl}/redevances/contrat/${contratId}/paiement-groupe`, payload).pipe(
       catchError((error) => {

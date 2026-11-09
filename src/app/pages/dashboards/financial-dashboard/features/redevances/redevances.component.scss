@@ -208,7 +208,138 @@
     }
   }
 
-  // ── Paiement groupé + réduction ─────────────────────────────────────────
+  // ── Lignes sélectionnées ──────────────────────────────────────────────
+  &__row--selected td {
+    background: #eff6ff;
+  }
+
+  &__checkbox-col {
+    width: 2.5rem;
+    text-align: center;
+    padding-left: 0.75rem !important;
+    padding-right: 0.5rem !important;
+
+    input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      cursor: pointer;
+      accent-color: #2563eb;
+    }
+  }
+
+  // ── Barre d'action flottante ─────────────────────────────────────────
+  &__selection-bar {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.9rem 0.6rem 1.1rem;
+    background: #1e293b;
+    color: #fff;
+    border-radius: 999px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    z-index: 999;
+    white-space: nowrap;
+    cursor: grab;
+    user-select: none;
+  }
+
+  &__selection-bar-info {
+    font-size: 0.88rem;
+    color: #cbd5e1;
+
+    strong {
+      color: #fff;
+    }
+  }
+
+  &__selection-bar-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    cursor: pointer;
+    border-radius: 999px;
+
+    i {
+      font-size: 1rem;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+  }
+
+  // ── Récap sélection dans le drawer ───────────────────────────────────
+  &__selection-recap {
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  &__selection-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
+    color: #475569;
+    border-bottom: 1px solid #f1f5f9;
+
+    &:last-of-type {
+      border-bottom: none;
+    }
+  }
+
+  &__selection-line-amount {
+    font-weight: 500;
+    color: #1e293b;
+  }
+
+  &__selection-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.9rem;
+    background: #f8fafc;
+    font-size: 0.88rem;
+    color: #475569;
+    border-top: 2px solid #e2e8f0;
+
+    strong {
+      color: #1e293b;
+      font-size: 0.95rem;
+    }
+  }
+
+  // ── Toggle réduction dans le drawer ──────────────────────────────────
+  &__checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1e293b;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+  }
+
+  // ── Proposition groupée active ────────────────────────────────────────
   &__paiement-groupe {
     margin-bottom: 1.25rem;
   }
