@@ -1,0 +1,63 @@
+:host {
+    display: block;
+}
+
+.name-cell {
+    font-weight: 500;
+}
+
+.num-col {
+    text-align: right;
+}
+
+.err {
+    color: var(--color-error-500);
+    font-weight: 600;
+}
+
+.actions-cell {
+    white-space: nowrap;
+}
+
+.st-completed {
+    background: var(--color-success-100);
+    color: #14713e;
+}
+
+.st-info {
+    background: #e3eefc;
+    color: #1c4e8a;
+}
+
+.st-error {
+    background: var(--color-error-100);
+    color: var(--color-error-500);
+}
+
+.st-muted {
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-500);
+}
+
+.empty-state svg {
+    stroke: var(--color-neutral-300);
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    color: var(--color-neutral-500);
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    transition: all 0.15s;
+
+    &:hover {
+        background: var(--color-primary-50);
+        color: var(--color-primary-600);
+    }
+}

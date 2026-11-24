@@ -1,0 +1,81 @@
+<div class="page-container">
+  <app-page-header
+    title="Importer des données territoriales"
+    [subtitle]="'Profil : ' + profile.country_name + ' — l\'analyse précède toujours la confirmation, aucune donnée n\'est modifiée avant validation.'"
+    [backLink]="'/territorial/units'"
+  />
+
+  <div class="steps">
+    <div class="step done"><span class="step-num">1</span> Télécharger le modèle</div>
+    <div class="step done"><span class="step-num">2</span> Remplir le fichier</div>
+    <div class="step current"><span class="step-num">3</span> Téléverser et analyser</div>
+    <div class="step"><span class="step-num">4</span> Prévisualiser</div>
+    <div class="step"><span class="step-num">5</span> Confirmer</div>
+  </div>
+
+  <div class="import-grid">
+    <div class="card template-card">
+      <h3><app-icon [icon]="icons.FileSpreadsheet" [size]="18" /> Modèle Excel</h3>
+      <p class="muted">
+        Téléchargez le modèle avec les colonnes Région, Province, Ville, Arrondissement,
+        Secteur, Village, Quartier et les consignes de remplissage.
+      </p>
+      <button class="btn btn-secondary" (click)="downloadTemplate()">
+        <app-icon [icon]="icons.Download" [size]="16" />
+        Télécharger le modèle
+      </button>
+    </div>
+
+    <div class="card upload-card">
+      <h3><app-icon [icon]="icons.Upload" [size]="18" /> Téléverser le fichier</h3>
+
+      <div
+        class="dropzone"
+        [class.over]="dragOver()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop($event)"
+      >
+        <app-icon [icon]="icons.FileSpreadsheet" [size]="36" />
+        <p>
+          Glissez votre fichier ici ou
+          <label class="file-label">
+            parcourez vos fichiers
+            <input type="file" accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" hidden />
+          </label>
+        </p>
+        <span class="muted">Formats acceptés : .xlsx, .csv — 10 Mo max</span>
+      </div>
+
+      @if (selectedFile(); as f) {
+        <div class="file-selected">
+          <app-icon [icon]="icons.FileSpreadsheet" [size]="18" />
+          <span class="file-name">{{ f.name }}</span>
+          <span class="muted">{{ (f.size / 1024).toFixed(0) }} Ko</span>
+        </div>
+      }
+
+      @if (error()) {
+        <div class="alert alert-error">
+          <app-icon [icon]="icons.AlertTriangle" [size]="16" />
+          {{ error() }}
+        </div>
+      }
+
+      <div class="upload-actions">
+        <button
+          class="btn btn-primary"
+          [disabled]="!selectedFile() || parsing() || analyzing()"
+          (click)="analyze()"
+        >
+          @if (parsing() || analyzing()) {
+            <app-icon [icon]="icons.Loader2" [size]="16" class="spin" /> Analyse en cours…
+          } @else {
+            Analyser le fichier
+            <app-icon [icon]="icons.ArrowRight" [size]="16" />
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

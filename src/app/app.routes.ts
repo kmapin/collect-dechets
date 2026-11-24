@@ -131,6 +131,16 @@ export const routes: Routes = [
       import('./pages/planning/planning.routes').then(m => m.PLANNING_ROUTES),
   },
 
+
+  // ================= MODULE PLANNING =================
+
+  {
+    // canActivate: [adminOrManagerGuard],
+    path: 'territorial',
+    loadChildren: () =>
+      import('./pages/decoupage-territorial/decoupage-territorial.routes').then(m => m.DECOUPAGE_TERRITORIAL_ROUTES),
+  },
+
   // ================= MODULE ÉQUIPES =================
 
   {

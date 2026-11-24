@@ -1,0 +1,33 @@
+// :host { display: block; }
+
+.form-container {
+  max-width: 720px;
+}
+
+.form-card {
+  padding: 26px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-neutral-100);
+}
+
+.required { color: var(--color-error-500); }
+
+.checkbox-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 400 !important;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  input { width: auto; }
+}

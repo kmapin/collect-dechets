@@ -1,0 +1,72 @@
+:host { display: block; }
+
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-neutral-100);
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: flex;
+  background: var(--color-neutral-100);
+  border-radius: var(--radius-md);
+  padding: 3px;
+
+  button {
+    border: none;
+    background: transparent;
+    padding: 6px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-neutral-600);
+    transition: all 0.15s;
+
+    &.active {
+      background: #fff;
+      color: var(--color-primary-700);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+}
+
+.num-col { text-align: right; width: 60px; }
+.row-path { font-weight: 500; }
+.type-hint { font-size: 12px; }
+.message-cell {
+  font-size: 13px;
+  &.sev-error { color: var(--color-error-500); font-weight: 500; }
+  &.sev-warning { color: var(--color-warning-500); }
+}
+
+.confirm-bar {
+  margin-top: 20px;
+  padding: 20px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.confirm-info {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+
+  svg { color: var(--color-primary-500); flex-shrink: 0; margin-top: 2px; }
+  &.blocking svg { color: var(--color-error-500); }
+  p { margin: 2px 0 0; font-size: 13px; }
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

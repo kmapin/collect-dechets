@@ -1,0 +1,128 @@
+<div class="page-container">
+  @if (loading()) {
+    <div class="loading-state">Chargement…</div>
+  } @else if (!unit()) {
+    <div class="empty-state">
+      <h3>Unité introuvable</h3>
+      <p>Cette unité territoriale n'existe pas ou a été supprimée.</p>
+      <a routerLink="/territorial/units" class="btn btn-primary">Retour à la liste</a>
+    </div>
+  } @else {
+    @if (unit(); as u) {
+      <app-page-header [title]="u.name" [backLink]="'/territorial/units'" [subtitle]="TYPE_LABELS[u.type_code] || u.type_code">
+        <a [routerLink]="['/territorial/units', u.id, 'edit']" class="btn btn-secondary">
+          <app-icon [icon]="icons.Pencil" [size]="16" />
+          Modifier
+        </a>
+        <button class="btn" [class.btn-danger]="u.active" [class.btn-success]="!u.active" (click)="toggleActive()">
+          @if (u.active) {
+            <app-icon [icon]="icons.Ban" [size]="16" /> Désactiver
+          } @else {
+            <app-icon [icon]="icons.CheckCircle2" [size]="16" /> Réactiver
+          }
+        </button>
+      </app-page-header>
+
+      @if (actionError()) {
+        <div class="alert alert-error">{{ actionError() }}</div>
+      }
+      @if (actionWarning()) {
+        <div class="alert alert-warning">
+          <app-icon [icon]="icons.AlertTriangle" [size]="16" />
+          {{ actionWarning() }}
+        </div>
+      }
+
+      <div class="detail-grid">
+        <div class="card info-card">
+          <h3>Informations</h3>
+          <dl class="info-list">
+            <div><dt>Nom</dt><dd>{{ u.name }}</dd></div>
+            <div><dt>Type</dt><dd><app-type-badge [typeCode]="u.type_code" [label]="TYPE_LABELS[u.type_code] || u.type_code" /></dd></div>
+            <div><dt>Pays</dt><dd>{{ u.country_code }}</dd></div>
+            <div>
+              <dt>Chemin hiérarchique</dt>
+              <dd class="breadcrumb">
+                @for (a of ancestors(); track a.id; let last = $last) {
+                  <a [routerLink]="['/territorial/units', a.id]">{{ a.name }}</a>
+                  <span class="sep">/</span>
+                }
+                <strong>{{ u.name }}</strong>
+              </dd>
+            </div>
+            <div><dt>Code facultatif</dt><dd>{{ u.code || '—' }}</dd></div>
+            <div><dt>Statut</dt><dd><app-status-pill [active]="u.active" /></dd></div>
+            <div><dt>Créé le</dt><dd>{{ fmt(u.created_at) }}</dd></div>
+            <div><dt>Modifié le</dt><dd>{{ fmt(u.updated_at) }}</dd></div>
+          </dl>
+        </div>
+
+        <div class="card tree-card">
+          <div class="card-header">
+            <h3>Arborescence</h3>
+            <span class="chip">{{ territory.countChildren(u.id) }} subdivision(s) directe(s)</span>
+          </div>
+
+          @if (tree(); as root) {
+            <div class="tree">
+              @for (child of root.children; track child.unit.id) {
+                <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: child }" />
+              }
+              <ng-template #treeNode let-node>
+                <div class="tree-item" [class.inactive]="!node.unit.active">
+                  <button class="tree-toggle" (click)="toggle(node)" [disabled]="node.children.length === 0">
+                    @if (node.children.length > 0) {
+                      @if (node.expanded) {
+                        <app-icon [icon]="icons.ChevronDown" [size]="15" />
+                      } @else {
+                        <app-icon [icon]="icons.ChevronRight" [size]="15" />
+                      }
+                    } @else {
+                      <span class="leaf-dot"></span>
+                    }
+                  </button>
+                  <a [routerLink]="['/territorial/units', node.unit.id]" class="tree-link">{{ node.unit.name }}</a>
+                  <app-type-badge [typeCode]="node.unit.type_code" [label]="TYPE_LABELS[node.unit.type_code] || node.unit.type_code" />
+                  <app-status-pill [active]="node.unit.active" />
+                  <span class="tree-count">{{ node.children.length }}</span>
+                </div>
+                @if (node.expanded) {
+                  <div class="tree-children">
+                    @for (child of node.children; track child.unit.id) {
+                      <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: child }" />
+                    }
+                  </div>
+                }
+              </ng-template>
+            </div>
+          }
+
+          @if (children().length === 0) {
+            <div class="no-children">
+              <p class="muted">Aucune subdivision directe.</p>
+            </div>
+          }
+
+          <div class="add-sub">
+            <h4>Ajouter une subdivision</h4>
+            <div class="add-sub-types">
+              @for (t of allowedChildrenTypes(u); track t.code) {
+                <a
+                  [routerLink]="['/territorial/units/new']"
+                  [queryParams]="{ parentId: u.id, typeCode: t.code }"
+                  class="chip chip-action"
+                >
+                  <app-icon [icon]="icons.Plus" [size]="13" />
+                  {{ t.label }}
+                </a>
+              }
+              @if (allowedChildrenTypes(u).length === 0) {
+                <span class="muted">Aucun type de subdivision autorisé sous ce niveau.</span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

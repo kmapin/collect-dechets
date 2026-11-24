@@ -1,0 +1,17 @@
+<div class="app-shell">
+    <div class="topbar">
+        <nav class="topbar-nav" aria-label="Navigation principale">
+            @for (item of navItems; track item.path) {
+            <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.exact }"
+                class="nav-item">
+                <app-icon [icon]="item.icon" [size]="16" />
+                <span>{{ item.label }}</span>
+            </a>
+            }
+        </nav>
+    </div>
+
+    <div class="decoupage-content">
+        <router-outlet />
+    </div>
+</div>

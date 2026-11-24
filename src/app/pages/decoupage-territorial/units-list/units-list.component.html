@@ -1,0 +1,124 @@
+<div class="page-container">
+  <app-page-header
+    title="Unités territoriales"
+    subtitle="Référentiel géographique centralisé — pays, régions, provinces, villes et subdivisions"
+  >
+    <button class="btn btn-secondary" (click)="downloadTemplate()">
+      <app-icon [icon]="icons.Download" [size]="16" />
+      Modèle Excel
+    </button>
+    <a routerLink="/territorial/units/new" class="btn btn-primary">
+      <app-icon [icon]="icons.Plus" [size]="16" />
+      Nouvelle unité
+    </a>
+  </app-page-header>
+
+  <div class="filter-bar">
+    <div class="search-box">
+      <app-icon [icon]="icons.Search" [size]="16" />
+      <input
+        type="text"
+        placeholder="Rechercher par nom…"
+        [value]="searchText()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+    <select [value]="selectedCountry()" (change)="onCountryChange($any($event.target).value)" class="filter-select">
+      @for (p of profiles; track p.country_code) {
+        <option [value]="p.country_code">{{ p.country_name }}</option>
+      }
+    </select>
+    <select [value]="selectedType()" (change)="onTypeChange($any($event.target).value)" class="filter-select">
+      <option value="">Tous les types</option>
+      @for (t of typeOptions; track t.code) {
+        <option [value]="t.code">{{ t.label }}</option>
+      }
+    </select>
+    <div class="segmented">
+      <button [class.active]="activeFilter() === 'all'" (click)="onActiveFilter('all')">Tous</button>
+      <button [class.active]="activeFilter() === 'active'" (click)="onActiveFilter('active')">Actifs</button>
+      <button [class.active]="activeFilter() === 'inactive'" (click)="onActiveFilter('inactive')">Inactifs</button>
+    </div>
+    <button class="icon-btn" (click)="load()" title="Rafraîchir">
+      <app-icon [icon]="icons.RefreshCw" [size]="16" />
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="loading-state">Chargement…</div>
+  } @else if (units().length === 0) {
+    <div class="empty-state">
+      <app-icon [icon]="icons.MapIcon" [size]="40" />
+      <h3>Aucune unité territoriale</h3>
+      <p>Commencez par créer un pays, une région ou importez un fichier Excel.</p>
+      <a routerLink="/territorial/units/new/units/new" class="btn btn-primary">
+        <app-icon [icon]="icons.Plus" [size]="16" />
+        Créer la première unité
+      </a>
+    </div>
+  } @else {
+    <div class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Type</th>
+            <th>Pays</th>
+            <th class="num-col">Subdiv.</th>
+            <th>Statut</th>
+            <th class="date-col">Créé le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of units(); track u.id) {
+            <tr [class.inactive]="!u.active">
+              <td class="name-cell">
+                <a [routerLink]="['/territorial/units', u.id]" class="unit-link">{{ u.name }}</a>
+                @if (u.code) {
+                  <span class="code-tag">{{ u.code }}</span>
+                }
+              </td>
+              <td>
+                <app-type-badge [typeCode]="u.type_code" [label]="typeLabel[u.type_code] || u.type_code" />
+              </td>
+              <td class="muted">{{ u.country_code }}</td>
+              <td class="num-col">{{ territory.countChildren(u.id) }}</td>
+              <td>
+                <app-status-pill [active]="u.active" />
+              </td>
+              <td class="date-col muted">{{ fmt(u.created_at) }}</td>
+              <td class="actions-cell">
+                <a [routerLink]="['/territorial/units', u.id]" class="icon-btn" title="Consulter">
+                  <app-icon [icon]="icons.Eye" [size]="16" />
+                </a>
+                <a [routerLink]="['/territorial/units', u.id, 'edit']" class="icon-btn" title="Modifier">
+                  <app-icon [icon]="icons.Pencil" [size]="16" />
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span class="pagination-info">
+        {{ ((page() - 1) * pageSize) + 1 }}–{{ Math.min(page() * pageSize, total()) }} sur {{ total() }}
+      </span>
+      <div class="pagination-controls">
+        <button class="icon-btn" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">
+          <app-icon [icon]="icons.ChevronLeft" [size]="16" />
+        </button>
+        <span class="page-num">{{ page() }} / {{ totalPages() }}</span>
+        <button class="icon-btn" [disabled]="page() >= totalPages()" (click)="goToPage(page() + 1)">
+          <app-icon [icon]="icons.ChevronRight" [size]="16" />
+        </button>
+      </div>
+    </div>
+  }
+</div>

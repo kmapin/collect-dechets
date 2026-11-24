@@ -1,0 +1,18 @@
+:host { display: block; }
+
+.name-cell { font-weight: 500; }
+.details-cell {
+  font-size: 12px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.act-CREATE { background: var(--color-primary-100); color: var(--color-primary-700); }
+.act-UPDATE { background: var(--color-accent-100); color: var(--color-accent-600); }
+.act-DEACTIVATE { background: var(--color-error-100); color: var(--color-error-500); }
+.act-ACTIVATE { background: var(--color-success-100); color: #14713e; }
+.act-IMPORT_ANALYZE, .act-IMPORT_CONFIRM { background: #e3eefc; color: #1c4e8a; }
+
+.empty-state svg { stroke: var(--color-neutral-300); }

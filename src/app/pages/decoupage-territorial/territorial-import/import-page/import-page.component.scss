@@ -1,0 +1,123 @@
+:host { display: block; }
+
+.import-container { max-width: 1000px; }
+
+.steps {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fff;
+  border: 1px solid var(--color-neutral-200);
+  color: var(--color-neutral-500);
+
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--color-neutral-100);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  &.done {
+    color: var(--color-primary-600);
+    border-color: var(--color-primary-200);
+    .step-num { background: var(--color-primary-100); }
+  }
+
+  &.current {
+    color: #fff;
+    background: var(--color-primary-500);
+    border-color: var(--color-primary-500);
+    .step-num { background: rgba(255,255,255,0.25); color: #fff; }
+  }
+}
+
+.import-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 20px;
+  align-items: start;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  padding: 22px;
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  p { font-size: 14px; line-height: 1.6; }
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 32px 20px;
+  border: 2px dashed var(--color-neutral-200);
+  border-radius: var(--radius-md);
+  color: var(--color-neutral-400);
+  transition: all 0.15s;
+  margin: 14px 0;
+
+  p { margin: 0; font-size: 14px; color: var(--color-neutral-600); }
+  svg { stroke: var(--color-neutral-300); }
+
+  &.over {
+    border-color: var(--color-primary-400);
+    background: var(--color-primary-50);
+  }
+}
+
+.file-label {
+  color: var(--color-primary-600);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.file-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--color-primary-50);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  margin-bottom: 14px;
+  color: var(--color-primary-700);
+
+  .file-name { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+.upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

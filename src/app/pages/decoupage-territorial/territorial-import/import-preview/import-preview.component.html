@@ -1,0 +1,149 @@
+<div class="page-container">
+  <app-page-header title="Prévisualisation de l'import"
+    [subtitle]="'Fichier : ' + fileName + ' — aucune donnée n\'est encore modifiée.'"
+    [backLink]="'/territorial/import'" />
+
+  @if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (confirmed() && confirmResult(); as r) {
+  <div class="alert alert-success">
+    <app-icon [icon]="icons.CheckCircle2" [size]="16" />
+    Import terminé : {{ r.created }} unité(s) créée(s), {{ r.reused }} réutilisée(s), {{ r.reactivated }} réactivée(s),
+    {{ r.errors }} erreur(s).
+    <a routerLink="/territorial/units" style="margin-left: 8px; font-weight: 600">Voir les unités</a>
+  </div>
+  }
+
+  @if (stats(); as s) {
+  <div class="stat-cards">
+    <div class="stat-card tone-created">
+      <div class="stat-value">{{ s.created }}</div>
+      <div class="stat-label">Éléments à créer</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ s.reused }}</div>
+      <div class="stat-label">Existant réutilisé</div>
+    </div>
+    <div class="stat-card tone-warning">
+      <div class="stat-value">{{ s.duplicates }}</div>
+      <div class="stat-label">Doublons dans le fichier</div>
+    </div>
+    <div class="stat-card" [class.tone-error]="s.errors > 0">
+      <div class="stat-value">{{ s.errors }}</div>
+      <div class="stat-label">Erreurs à corriger</div>
+    </div>
+    @if (s.reactivated > 0) {
+    <div class="stat-card">
+      <div class="stat-value">{{ s.reactivated }}</div>
+      <div class="stat-label">Réactivations proposées</div>
+    </div>
+    }
+  </div>
+
+  <div class="table-card">
+    <div class="table-toolbar">
+      <div class="segmented">
+        <button [class.active]="filter() === 'all'" (click)="setFilter('all')">Tout ({{ rows().length }})</button>
+        <button [class.active]="filter() === 'created'" (click)="setFilter('created')">À créer ({{ s.created
+          }})</button>
+        <button [class.active]="filter() === 'warnings'" (click)="setFilter('warnings')">Avertissements ({{ s.duplicates
+          + s.reactivated }})</button>
+        <button [class.active]="filter() === 'errors'" (click)="setFilter('errors')">Erreurs ({{ s.errors }})</button>
+      </div>
+      <button class="btn btn-secondary" (click)="downloadReport()">
+        <app-icon [icon]="icons.Download" [size]="16" />
+        Rapport
+      </button>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th class="num-col">Ligne</th>
+          <th>Contenu</th>
+          <th>Décision</th>
+          <th>Explication</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of filteredRows; track r.row_number + '-' + $index) {
+        <tr>
+          <td class="num-col muted">{{ r.row_number }}</td>
+          <td>
+            <div class="row-path">{{ r.path }}</div>
+            @if (r.type_code) {
+            <span class="muted type-hint">{{ r.type_code }}</span>
+            }
+          </td>
+          <td>
+            <span class="row-badge" [class]="'row-' + (r.status ?? 'ERROR')">
+              {{ statusLabel[r.status || 'ERROR'] || r.status }}
+            </span>
+          </td>
+          <td class="message-cell" [class.sev-error]="r.severity === 'error'"
+            [class.sev-warning]="r.severity === 'warning'">
+            {{ r.message }}
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="confirm-bar card">
+    @if (hasBlockingErrors) {
+    <div class="confirm-info blocking">
+      <app-icon [icon]="icons.XCircle" [size]="18" />
+      <div>
+        <strong>{{ s.errors }} erreur(s) bloquante(s)</strong>
+        <p class="muted">Corrigez le fichier et relancez l'analyse. Les lignes en erreur ne seront pas importées.</p>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <a routerLink="/territorial/import" class="btn btn-secondary">Corriger le fichier</a>
+      <button class="btn btn-primary" [disabled]="true">
+        <app-icon [icon]="icons.ShieldCheck" [size]="16" />
+        Confirmation indisponible
+      </button>
+    </div>
+    } @else if (confirmed()) {
+    <div class="confirm-info">
+      <app-icon [icon]="icons.Info" [size]="18" />
+      <div>
+        <strong>Import confirmé et enregistré.</strong>
+        <p class="muted">Le lot est consultable dans l'historique. Une double confirmation ne crée pas de doublons.</p>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <a routerLink="/territorial/import/history" class="btn btn-secondary">Historique</a>
+      <button class="btn btn-primary" [disabled]="true">
+        <app-icon [icon]="icons.CheckCircle2" [size]="16" />
+        Déjà confirmé
+      </button>
+    </div>
+    } @else {
+    <div class="confirm-info">
+      <app-icon [icon]="icons.CheckCircle2" [size]="18" />
+      <div>
+        <strong>{{ s.created }} unité(s) seront réellement créées.</strong>
+        <p class="muted">{{ s.reused }} élément(s) resteront inchangés. L'opération est idempotente : une double
+          confirmation ne crée pas de doublons.</p>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" (click)="cancel()">Annuler l'import</button>
+      <button class="btn btn-primary" [disabled]="confirming()" (click)="confirm()">
+        @if (confirming()) {
+        <app-icon [icon]="icons.Loader2" [size]="16" class="spin" /> Application…
+        } @else {
+        <app-icon [icon]="icons.ShieldCheck" [size]="16" />
+        Confirmer l'importation
+        }
+      </button>
+    </div>
+    }
+  </div>
+  }
+</div>

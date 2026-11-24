@@ -1,0 +1,60 @@
+<div class="page-container">
+  <app-page-header title="Historique des imports"
+    subtitle="Suivi de toutes les opérations d'importation, avec rapports téléchargeables" [backLink]="'/territorial/import'" />
+
+  @if (imports.length === 0) {
+  <div class="empty-state">
+    <app-icon [icon]="icons.HistoryIcon" [size]="40" />
+    <h3>Aucun import enregistré</h3>
+    <p>Les imports analysés et confirmés apparaîtront ici avec leur rapport.</p>
+    <a routerLink="/territorial/import" class="btn btn-primary">Importer un fichier</a>
+  </div>
+  } @else {
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Fichier</th>
+          <th>Pays</th>
+          <th>Auteur</th>
+          <th>Date</th>
+          <th class="num-col">Lignes</th>
+          <th class="num-col">Créations</th>
+          <th class="num-col">Erreurs</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (imp of imports; track imp.id) {
+        <tr>
+          <td class="name-cell">
+            <app-icon [icon]="icons.FileSpreadsheet" [size]="15" />
+            {{ imp.file_name }}
+          </td>
+          <td class="muted">{{ imp.country_code }}</td>
+          <td>{{ imp.uploaded_by }}</td>
+          <td class="muted">{{ fmt(imp.created_at) }}</td>
+          <td class="num-col">{{ imp.statistics.totalRows }}</td>
+          <td class="num-col">{{ imp.statistics.created }}</td>
+          <td class="num-col" [class.err]="imp.statistics.errors > 0">{{ imp.statistics.errors }}</td>
+          <td>
+            <span class="row-badge" [class]="statusClass(imp.status)">{{ statusLabel(imp.status) }}</span>
+          </td>
+          <td class="actions-cell">
+            <a [routerLink]="['/territorial/import', imp.id, 'preview']" class="icon-btn" title="Consulter">
+              <app-icon [icon]="icons.Eye" [size]="16" />
+            </a>
+            @if (imp.status === 'COMPLETED') {
+            <button class="icon-btn" (click)="downloadReport(imp.id)" title="Télécharger le rapport">
+              <app-icon [icon]="icons.Download" [size]="16" />
+            </button>
+            }
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>
