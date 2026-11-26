@@ -6,7 +6,7 @@ import { TerritoryService } from '../services/territory.service';
 import { TerritorialUnit, TerritorialProfile, TerritoryType } from '../models/models';
 import { PageHeaderComponent } from '../../../shared/decoupage-territorial/page-header.component';
 import { cleanCell, normalizeName } from '../services/territorial-utils';
-import { Save, AlertTriangle } from 'lucide-angular';
+import { Save, AlertTriangle, ChevronDown } from 'lucide-angular';
 import { IconComponent } from '../../../shared/decoupage-territorial/icon.component';
 
 @Component({
@@ -25,6 +25,8 @@ export class UnitFormComponent implements OnInit, OnDestroy {
   code = signal('');
   latitude = signal<number | null>(null);
   longitude = signal<number | null>(null);
+  parentSearch = signal('');
+  parentDropdownOpen = signal(false);
   parentTypeCode = signal('COUNTRY');
   parentChain = signal<string[]>([]); // ids sélectionnés dans la cascade
   active = signal(true);
@@ -33,7 +35,7 @@ export class UnitFormComponent implements OnInit, OnDestroy {
   saving = signal(false);
   isLocating = signal(false);
   locationMessage = signal<string | null>(null);
-  icons = { Save, AlertTriangle };
+  icons = { Save, AlertTriangle, ChevronDown };
 
   private readonly DEFAULT_MAP_CENTER: [number, number] = [12.3714, -1.5197];
   private unitMap?: L.Map;
@@ -118,7 +120,26 @@ export class UnitFormComponent implements OnInit, OnDestroy {
       .map((r) => r.parent);
     return this.territory
       .getApiUnits()
-      .filter((u) => allowedParents.includes(u.type_code) && u.active);
+      .filter((u) =>
+        allowedParents.includes(u.type_code)
+        && (u.active || u.id === this.parentId || u.id === this.editUnit?.parent_id),
+      );
+  }
+
+  parentOptionLabel(unit: TerritorialUnit): string {
+    return `${unit.name} (${this.territory.labelOf(unit.type_code)})`;
+  }
+
+  get selectedParent(): TerritorialUnit | null {
+    return this.parentId ? this.territory.getApiUnit(this.parentId) : null;
+  }
+
+  get filteredParentCandidates(): TerritorialUnit[] {
+    const query = normalizeName(this.parentSearch().trim());
+    return this.parentCandidates.filter((unit) =>
+      !query
+      || normalizeName(this.parentOptionLabel(unit)).includes(query),
+    );
   }
 
   get parentId(): string | null {
@@ -152,17 +173,41 @@ export class UnitFormComponent implements OnInit, OnDestroy {
 
   onParentTypeChange(value: string) {
     this.parentTypeCode.set(value);
+    this.parentSearch.set('');
+    this.parentDropdownOpen.set(false);
     this.cascadeSelections = [];
   }
 
-  onParentChange(value: string) {
-    if (!value) {
-      this.cascadeSelections = [];
-      return;
+  toggleParentDropdown() {
+    const open = !this.parentDropdownOpen();
+    this.parentDropdownOpen.set(open);
+    this.parentSearch.set('');
+  }
+
+  onParentPickerFocusOut(event: FocusEvent) {
+    const container = event.currentTarget as HTMLElement;
+    const nextTarget = event.relatedTarget as Node | null;
+    if (!nextTarget || !container.contains(nextTarget)) {
+      this.parentDropdownOpen.set(false);
+      this.parentSearch.set('');
     }
-    const unit = this.territory.getApiUnit(value);
-    if (unit) {
-      this.cascadeSelections = [unit.id];
+  }
+
+  selectParent(unit: TerritorialUnit) {
+    this.cascadeSelections = [unit.id];
+    this.parentSearch.set('');
+    this.parentDropdownOpen.set(false);
+  }
+
+  onParentSearchKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.parentDropdownOpen.set(false);
+      this.parentSearch.set('');
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const candidates = this.filteredParentCandidates;
+      if (candidates.length === 1) this.selectParent(candidates[0]);
     }
   }
 

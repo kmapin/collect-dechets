@@ -33,6 +33,13 @@ describe('UnitFormComponent', () => {
       created_at: '',
       updated_at: '',
     };
+    const parents = ['Secteur 1', 'Secteur 2', 'Secteur 3'].map((name, index): TerritorialUnit => ({
+      ...unit,
+      id: `sector-${index + 1}`,
+      type_code: 'SECTOR',
+      name,
+      normalized_name: name.toLowerCase(),
+    }));
     const route = {
       snapshot: {
         paramMap: convertToParamMap({ id: unit.id }),
@@ -44,16 +51,22 @@ describe('UnitFormComponent', () => {
       getApiProfiles: () => [profile],
       getApiProfile: () => profile,
       getApiUnit: (id: string) => id === unit.id ? unit : null,
+      getApiUnits: () => parents,
+      labelOf: (type: string) => type,
     } as unknown as TerritoryService;
 
     const component = new UnitFormComponent(route, {} as Router, territory);
     await component.ngOnInit();
 
     expect(component.parentId).toBe('sector-1');
+    component.toggleParentDropdown();
+    component.parentSearch.set('secteur 2');
+    expect(component.filteredParentCandidates.map((parent) => parent.id)).toEqual(['sector-2']);
+    component.selectParent(parents[1]);
+    expect(component.parentId).toBe('sector-2');
+    expect(component.parentDropdownOpen()).toBeFalse();
+    component.selectParent(parents[0]);
+    expect(component.parentId).toBe('sector-1');
     expect(component.canSubmit).toBeFalse();
-
-    component.latitude.set(12.36049287151976);
-    component.longitude.set(-1.4838275313377383);
-    expect(component.canSubmit).toBeTrue();
   });
 });

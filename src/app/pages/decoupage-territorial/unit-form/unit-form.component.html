@@ -33,20 +33,55 @@
 
         @if (selectedType !== 'COUNTRY') {
           <div class="form-field">
-            <label>Unité parente</label>
-            <select
-              [value]="parentId ?? ''"
-              (change)="onParentChange($any($event.target).value)"
-            >
-              <option value="">— Sélectionner le parent —</option>
-              @for (u of parentCandidates; track u.id) {
-                <option [value]="u.id">
-                  {{ u.name }} ({{ territory.labelOf(u.type_code) }})
-                </option>
+            <label for="parent-select">Unité parente</label>
+            <div class="parent-picker" (focusout)="onParentPickerFocusOut($event)">
+              <button
+                id="parent-select"
+                type="button"
+                class="parent-picker-trigger"
+                aria-haspopup="listbox"
+                aria-controls="parent-options"
+                [attr.aria-expanded]="parentDropdownOpen()"
+                (click)="toggleParentDropdown()"
+              >
+                <span>{{ selectedParent ? parentOptionLabel(selectedParent) : 'Sélectionner une unité parente…' }}</span>
+                <span class="parent-picker-chevron" [class.open]="parentDropdownOpen()" aria-hidden="true">
+                  <app-icon [icon]="icons.ChevronDown" [size]="16" />
+                </span>
+              </button>
+              @if (parentDropdownOpen()) {
+                <div class="parent-picker-dropdown">
+                  <input
+                    type="search"
+                    class="parent-picker-search"
+                    aria-label="Rechercher une unité parente"
+                    placeholder="Rechercher par nom ou type…"
+                    [value]="parentSearch()"
+                    (input)="parentSearch.set($any($event.target).value)"
+                    (keydown)="onParentSearchKeydown($event)"
+                    autocomplete="off"
+                  />
+                  <div class="parent-picker-options" id="parent-options" role="listbox" aria-label="Unités parentes">
+                    @for (u of filteredParentCandidates; track u.id) {
+                      <button
+                        type="button"
+                        role="option"
+                        class="parent-picker-option"
+                        [class.selected]="u.id === parentId"
+                        [attr.aria-selected]="u.id === parentId"
+                        (click)="selectParent(u)"
+                      >
+                        {{ parentOptionLabel(u) }}
+                      </button>
+                    } @empty {
+                      <p class="parent-picker-empty">Aucune unité parente trouvée.</p>
+                    }
+                  </div>
+                </div>
               }
-            </select>
+            </div>
             <span class="hint">
-              Seuls les parents actifs autorisés par le profil territorial sont proposés.
+              Ouvrez la liste puis recherchez et sélectionnez une unité parente autorisée.
             </span>
           </div>
         }
