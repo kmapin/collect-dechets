@@ -31,14 +31,14 @@ describe('TerritoryHttpService', () => {
     expect(options).toBeUndefined();
   });
 
-  it('getCitiesByCountry : interroge GET /territories/cities avec countryId en query param', () => {
+  it('getAllCities : interroge GET /territories/cities sans countryId', () => {
     httpSpy.get.and.returnValue(of([]));
 
-    service.getCitiesByCountry('pays-1').subscribe();
+    service.getAllCities().subscribe();
 
     const [url, options] = httpSpy.get.calls.argsFor(0);
     expect(url.endsWith('/territories/cities')).toBe(true);
-    expect(options.params).toEqual({ countryId: 'pays-1' });
+    expect(options).toBeUndefined();
   });
 
   it('getArrondissementsByCity : interroge GET /territories/arrondissements avec cityId', () => {

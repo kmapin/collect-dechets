@@ -3,8 +3,8 @@
     <div class="loading-state">Chargement…</div>
   } @else if (!unit()) {
     <div class="empty-state">
-      <h3>Unité introuvable</h3>
-      <p>Cette unité territoriale n'existe pas ou a été supprimée.</p>
+      <h3>{{ actionError() ? 'Erreur de chargement' : 'Unité introuvable' }}</h3>
+      <p>{{ actionError() || "Cette unité territoriale n'existe pas ou a été supprimée." }}</p>
       <a routerLink="/territorial/units" class="btn btn-primary">Retour à la liste</a>
     </div>
   } @else {
@@ -14,12 +14,9 @@
           <app-icon [icon]="icons.Pencil" [size]="16" />
           Modifier
         </a>
-        <button class="btn" [class.btn-danger]="u.active" [class.btn-success]="!u.active" (click)="toggleActive()">
-          @if (u.active) {
-            <app-icon [icon]="icons.Ban" [size]="16" /> Désactiver
-          } @else {
-            <app-icon [icon]="icons.CheckCircle2" [size]="16" /> Réactiver
-          }
+        <button class="btn btn-danger" (click)="deleteUnit()">
+          <app-icon [icon]="icons.Trash2" [size]="16" />
+          Supprimer
         </button>
       </app-page-header>
 
@@ -60,7 +57,7 @@
         <div class="card tree-card">
           <div class="card-header">
             <h3>Arborescence</h3>
-            <span class="chip">{{ territory.countChildren(u.id) }} subdivision(s) directe(s)</span>
+            <span class="chip">{{ children().length }} subdivision(s) directe(s)</span>
           </div>
 
           @if (tree(); as root) {

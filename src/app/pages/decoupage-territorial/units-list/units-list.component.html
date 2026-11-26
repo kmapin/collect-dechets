@@ -55,7 +55,7 @@
       <app-icon [icon]="icons.MapIcon" [size]="40" />
       <h3>Aucune unité territoriale</h3>
       <p>Commencez par créer un pays, une région ou importez un fichier Excel.</p>
-      <a routerLink="/territorial/units/new/units/new" class="btn btn-primary">
+      <a routerLink="/territorial/units/new" class="btn btn-primary">
         <app-icon [icon]="icons.Plus" [size]="16" />
         Créer la première unité
       </a>
@@ -86,8 +86,8 @@
               <td>
                 <app-type-badge [typeCode]="u.type_code" [label]="typeLabel[u.type_code] || u.type_code" />
               </td>
-              <td class="muted">{{ u.country_code }}</td>
-              <td class="num-col">{{ territory.countChildren(u.id) }}</td>
+              <td class="muted">{{ u.metadata['country_name'] || '—' }}</td>
+              <td class="num-col">{{ territory.getApiChildren(u.id).length }}</td>
               <td>
                 <app-status-pill [active]="u.active" />
               </td>

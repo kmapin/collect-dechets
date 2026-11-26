@@ -16,7 +16,7 @@ import { IconComponent } from '../../../shared/decoupage-territorial/icon.compon
   styleUrl: './unit-form.component.scss',
 })
 export class UnitFormComponent implements OnInit {
-  profile: TerritorialProfile;
+  profile!: TerritorialProfile;
   editId: string | null = null;
   editUnit: TerritorialUnit | null = null;
 
@@ -34,19 +34,23 @@ export class UnitFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     public territory: TerritoryService
-  ) {
-    const p = this.territory.getProfile('BF');
-    if (!p) throw new Error('Profil territorial introuvable');
-    this.profile = p;
-  }
+  ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.territory.loadApiUnits();
+    const profiles = this.territory.getApiProfiles();
+    const country = profiles[0];
+    if (!country) {
+      this.profile = this.territory.getApiProfile('API');
+    } else {
+      this.profile = country;
+    }
     const id = this.route.snapshot.paramMap.get('id');
     const typeCode = this.route.snapshot.queryParamMap.get('typeCode');
     const parentId = this.route.snapshot.queryParamMap.get('parentId');
     if (id) {
       this.editId = id;
-      const unit = this.territory.getUnit(id);
+      const unit = this.territory.getApiUnit(id);
       if (!unit) {
         this.error.set('Unité introuvable.');
         return;
@@ -64,7 +68,7 @@ export class UnitFormComponent implements OnInit {
       }
     } else if (parentId && typeCode) {
       // Création d'une subdivision depuis la fiche d'un parent
-      const parent = this.territory.getUnit(parentId);
+      const parent = this.territory.getApiUnit(parentId);
       if (parent) {
         this.parentTypeCode.set(typeCode);
         this.cascadeSelections = [...parent.ancestor_ids, parent.id];
@@ -77,10 +81,10 @@ export class UnitFormComponent implements OnInit {
 
   cascadeSelections: string[] = [];
 
-  // Types affichés dans la cascade (hors COUNTRY)
+  // Types territoriaux réellement pris en charge par l’API.
   get cascadeTypes(): TerritoryType[] {
     return [...this.profile.types]
-      .filter((t) => t.code !== 'COUNTRY' && t.code !== 'CUSTOM')
+      .filter((t) => t.code !== 'CUSTOM')
       .sort((a, b) => a.order - b.order);
   }
 
@@ -100,8 +104,8 @@ export class UnitFormComponent implements OnInit {
       .filter((r) => r.child === this.selectedType)
       .map((r) => r.parent);
     return this.territory
-      .listUnits({ pageSize: 100000, countryCode: this.profile.country_code })
-      .data.filter((u) => allowedParents.includes(u.type_code) && u.active);
+      .getApiUnits()
+      .filter((u) => allowedParents.includes(u.type_code) && u.active);
   }
 
   get parentId(): string | null {
@@ -114,7 +118,7 @@ export class UnitFormComponent implements OnInit {
     this.cascadeSelections = this.cascadeSelections.slice(0, index + 1);
     // Déterminer le type suivant
     if (!skipReset) {
-      const parentUnit = this.parentId ? this.territory.getUnit(this.parentId) : null;
+      const parentUnit = this.parentId ? this.territory.getApiUnit(this.parentId) : null;
       if (parentUnit) {
         const nextTypes = this.profile.allowed_relations
           .filter((r) => r.parent === parentUnit.type_code)
@@ -143,7 +147,7 @@ export class UnitFormComponent implements OnInit {
       this.cascadeSelections = [];
       return;
     }
-    const unit = this.territory.getUnit(value);
+    const unit = this.territory.getApiUnit(value);
     if (unit) {
       this.cascadeSelections = [unit.id];
     }
@@ -167,38 +171,21 @@ export class UnitFormComponent implements OnInit {
     }
 
     try {
-      const validation = this.territory.validateUnit(
-        this.profile.country_code,
-        this.selectedType,
-        name,
-        this.selectedType === 'COUNTRY' ? null : this.parentId,
-        this.editId
-      );
-      if (!validation.ok) {
-        this.error.set(validation.message);
-        this.saving.set(false);
-        return;
-      }
-
       if (this.editId) {
-        this.territory.updateUnit(this.editId, {
+        await this.territory.updateApiUnit(this.editId, this.selectedType as 'COUNTRY' | 'CITY' | 'ARRONDISSEMENT' | 'SECTOR' | 'NEIGHBORHOOD', {
           name,
           code: this.code() || null,
-          active: this.active(),
+          parentId: this.selectedType === 'COUNTRY' ? null : this.parentId,
         });
-        this.territory.logAudit('UPDATE', 'territorial_units', this.editId, name, { name, code: this.code() });
         this.router.navigate(['/territorial/units', this.editId]);
       } else {
-        const created = this.territory.createUnit({
-          countryCode: this.profile.country_code,
-          typeCode: this.selectedType,
+        const created = await this.territory.createApiUnit({
+          typeCode: this.selectedType as 'COUNTRY' | 'CITY' | 'ARRONDISSEMENT' | 'SECTOR' | 'NEIGHBORHOOD',
           name,
           parentId: this.selectedType === 'COUNTRY' ? null : this.parentId,
           code: this.code() || null,
-          createdBy: 'admin',
         });
-        this.territory.logAudit('CREATE', 'territorial_units', created.id, name, { type: this.selectedType });
-        this.router.navigate(['/units', created.id]);
+        this.router.navigate(['/territorial/units', created.id]);
       }
     } catch (e: any) {
       this.error.set(e.message);

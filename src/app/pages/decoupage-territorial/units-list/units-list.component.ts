@@ -40,9 +40,20 @@ export class UnitsListComponent {
   Math = Math;
 
   constructor(public territory: TerritoryService, private parser: ImportParserService) {
-    this.profiles = this.territory.getProfiles();
-    if (this.profiles.length > 0) this.selectedCountry.set(this.profiles[0].country_code);
-    this.load();
+    this.profiles = [];
+    void this.initialize();
+  }
+
+  private async initialize() {
+    try {
+      await this.territory.loadApiUnits();
+      this.profiles = this.territory.getApiProfiles();
+      if (this.profiles.length > 0) this.selectedCountry.set(this.profiles[0].country_code);
+      this.load();
+    } catch (e: any) {
+      this.error.set(e?.message || 'Impossible de charger les données territoriales.');
+      this.loading.set(false);
+    }
   }
 
   get typeOptions() {
@@ -56,13 +67,13 @@ export class UnitsListComponent {
 
   icons = { Search, Plus, Download, Eye, Pencil, ChevronLeft, ChevronRight, RefreshCw, MapIcon };
 
-  load() {
+  async load() {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const result = this.territory.listUnits({
+      await this.territory.loadApiUnits();
+      const result = this.territory.apiListUnits({
         search: this.searchText() || undefined,
-        countryCode: this.selectedCountry() || undefined,
         typeCode: this.selectedType() || undefined,
         activeOnly: this.activeFilter() === 'active' ? true : this.activeFilter() === 'inactive' ? false : undefined,
         page: this.page(),

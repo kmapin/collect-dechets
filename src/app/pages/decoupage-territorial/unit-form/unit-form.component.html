@@ -21,13 +21,6 @@
           <span class="hint">Le type ne peut pas être modifié après création.</span>
         </div>
 
-        <div class="form-field">
-          <label>Statut</label>
-          <label class="checkbox-row">
-            <input type="checkbox" [checked]="active()" (change)="active.set($any($event.target).checked)" />
-            <span>Unité active (proposée dans les nouveaux formulaires)</span>
-          </label>
-        </div>
       } @else {
         <div class="form-field">
           <label>Type d'unité</label>
@@ -70,15 +63,17 @@
         <span class="hint">Le nom est conservé tel que fourni. La comparaison ignore la casse et les accents.</span>
       </div>
 
-      <div class="form-field">
-        <label>Code territorial (facultatif)</label>
-        <input
-          type="text"
-          [value]="code()"
-          (input)="code.set($any($event.target).value)"
-          placeholder="Ex. : OUA-01"
-        />
-      </div>
+      @if (selectedType === 'COUNTRY') {
+        <div class="form-field">
+          <label>Code territorial (facultatif)</label>
+          <input
+            type="text"
+            [value]="code()"
+            (input)="code.set($any($event.target).value)"
+            placeholder="Ex. : BF"
+          />
+        </div>
+      }
 
       <div class="form-actions">
         <a [routerLink]="editId ? '/territorial/units/' + editId : '/territorial/units'" class="btn btn-secondary">Annuler</a>

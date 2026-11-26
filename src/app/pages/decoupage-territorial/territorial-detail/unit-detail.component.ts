@@ -1,13 +1,15 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { distinctUntilChanged, map } from 'rxjs';
 import { TerritoryService } from '../services/territory.service';
 import { TerritorialUnit, TYPE_LABELS } from '../models/models';
 import { PageHeaderComponent } from '../../../shared/decoupage-territorial/page-header.component';
 import { TypeBadgeComponent } from '../../../shared/decoupage-territorial/type-badge.component';
 import { StatusPillComponent } from '../../../shared/decoupage-territorial/status-pill.component';
 import { formatDate } from '../services/territorial-utils';
-import { Pencil, ChevronDown, ChevronRight, Ban, CheckCircle2, AlertTriangle, Plus } from 'lucide-angular';
+import { Pencil, ChevronDown, ChevronRight, Ban, CheckCircle2, AlertTriangle, Plus, Trash2 } from 'lucide-angular';
 import { IconComponent } from '../../../shared/decoupage-territorial/icon.component';
 
 interface TreeNode {
@@ -24,6 +26,9 @@ interface TreeNode {
   styleUrl: './unit-detail.component.scss',
 })
 export class UnitDetailComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
+  private loadSequence = 0;
+
   unit = signal<TerritorialUnit | null>(null);
   ancestors = signal<TerritorialUnit[]>([]);
   tree = signal<TreeNode | null>(null);
@@ -32,31 +37,47 @@ export class UnitDetailComponent implements OnInit {
   actionError = signal<string | null>(null);
   actionWarning = signal<string | null>(null);
   TYPE_LABELS = TYPE_LABELS;
-  icons = { Pencil, ChevronDown, ChevronRight, Ban, CheckCircle2, AlertTriangle, Plus };
+  icons = { Pencil, ChevronDown, ChevronRight, Ban, CheckCircle2, AlertTriangle, Plus, Trash2 };
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     public territory: TerritoryService
   ) {}
 
-  async ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id') ?? '';
-    await this.load(id);
+  ngOnInit() {
+    this.route.paramMap
+      .pipe(
+        map((params) => params.get('id') ?? ''),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((id) => void this.load(id));
   }
 
   async load(id: string) {
+    const sequence = ++this.loadSequence;
     this.loading.set(true);
+    this.actionError.set(null);
+    this.actionWarning.set(null);
+    this.unit.set(null);
+    this.ancestors.set([]);
+    this.children.set([]);
+    this.tree.set(null);
+
     try {
-      const unit = this.territory.getUnit(id);
+      await this.territory.loadApiUnits();
+      if (sequence !== this.loadSequence) return;
+
+      const unit = this.territory.getApiUnit(id);
       if (!unit) {
-        this.unit.set(null);
         return;
       }
       this.unit.set(unit);
-      this.ancestors.set(this.territory.getAncestors(unit.ancestor_ids));
-      this.children.set(this.territory.getChildren(id));
+      this.ancestors.set(this.territory.getApiAncestors(unit));
+      this.children.set(this.territory.getApiChildren(id));
 
-      const descendants = this.territory.getDescendants(id);
+      const descendants = this.territory.getApiDescendants(id);
       const root: TreeNode = { unit, children: [], expanded: true };
       const nodeMap = new Map<string, TreeNode>([[id, root]]);
       for (const d of descendants) {
@@ -69,8 +90,14 @@ export class UnitDetailComponent implements OnInit {
         }
       }
       this.tree.set(root);
+    } catch (e: unknown) {
+      if (sequence === this.loadSequence) {
+        this.actionError.set(
+          e instanceof Error ? e.message : 'Impossible de charger cette unité territoriale.',
+        );
+      }
     } finally {
-      this.loading.set(false);
+      if (sequence === this.loadSequence) this.loading.set(false);
     }
   }
 
@@ -79,30 +106,31 @@ export class UnitDetailComponent implements OnInit {
   }
 
   async toggleActive() {
+    this.actionError.set(null);
+    this.actionWarning.set(
+      'Le contrat API ne fournit pas de champ actif/inactif pour ces unités territoriales.',
+    );
+  }
+
+  async deleteUnit() {
     const unit = this.unit();
     if (!unit) return;
-    this.actionError.set(null);
-    this.actionWarning.set(null);
+    if (!window.confirm(`Supprimer « ${unit.name} » ? Cette action est irréversible.`)) return;
 
-    if (unit.active) {
-      const childCount = this.territory.countChildren(unit.id);
-      if (childCount > 0) {
-        this.actionWarning.set(
-          `Cette unité a ${childCount} subdivision(s). La désactivation ne désactive pas automatiquement les enfants : pensez à les traiter si nécessaire.`
-        );
-      }
-      this.territory.setUnitActive(unit.id, false);
-      this.territory.logAudit('DEACTIVATE', 'territorial_units', unit.id, unit.name, {});
-    } else {
-      this.territory.setUnitActive(unit.id, true);
-      this.territory.logAudit('ACTIVATE', 'territorial_units', unit.id, unit.name, {});
+    this.actionError.set(null);
+    try {
+      await this.territory.deleteApiUnit(
+        unit.id,
+        unit.type_code as 'COUNTRY' | 'CITY' | 'ARRONDISSEMENT' | 'SECTOR' | 'NEIGHBORHOOD',
+      );
+      await this.router.navigate(['/territorial/units']);
+    } catch (e: any) {
+      this.actionError.set(e?.message || 'Impossible de supprimer cette unité territoriale.');
     }
-    await this.load(unit.id);
   }
 
   allowedChildrenTypes(unit: TerritorialUnit): { code: string; label: string }[] {
-    const profile = this.territory.getProfile(unit.country_code);
-    if (!profile) return [];
+    const profile = this.territory.getApiProfile(unit.country_code);
     return profile.allowed_relations
       .filter((r) => r.parent === unit.type_code)
       .map((r) => ({

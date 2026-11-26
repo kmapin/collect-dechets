@@ -19,20 +19,40 @@ export class TerritoryHttpService {
     return this.http.get<Country[]>(`${this.api}/countries`).pipe(map((items) => items.map(normalizeId)));
   }
 
-  // Sans filtre — toutes les villes réellement seedées (aujourd'hui, uniquement celles
-  // du Burkina Faso). Les appelants qui migraient depuis CountriesOrgMockService
-  // passaient un id de pays fictif ("1", l'id du mock) : un vrai `_id` Mongo ne
-  // correspondant à rien, la requête filtrée renvoyait toujours 0 résultat (voire une
-  // erreur de cast ObjectId). Même convention que ZoneSelectorComponent, qui charge déjà
-  // toute la hiérarchie sans filtre par pays.
+  getCountry(id: string): Observable<Country> {
+    return this.http.get<Country>(`${this.api}/countries/${id}`).pipe(map(normalizeId));
+  }
+
+  createCountry(data: { name: string; code?: string; latitude?: number; longitude?: number }): Observable<Country> {
+    return this.http.post<Country>(`${this.api}/countries`, data).pipe(map(normalizeId));
+  }
+
+  updateCountry(id: string, data: { name: string; code?: string; latitude?: number; longitude?: number }): Observable<Country> {
+    return this.http.put<Country>(`${this.api}/countries/${id}`, data).pipe(map(normalizeId));
+  }
+
+  deleteCountry(id: string): Observable<Country> {
+    return this.http.delete<Country>(`${this.api}/countries/${id}`);
+  }
+
   getAllCities(): Observable<City[]> {
     return this.http.get<City[]>(`${this.api}/cities`).pipe(map((items) => items.map(normalizeId)));
   }
 
-  getCitiesByCountry(countryId: string): Observable<City[]> {
-    return this.http.get<City[]>(`${this.api}/cities`, { params: { countryId } }).pipe(
-      map((items) => items.map(normalizeId)),
-    );
+  getCity(id: string): Observable<City> {
+    return this.http.get<City>(`${this.api}/cities/${id}`).pipe(map(normalizeId));
+  }
+
+  createCity(data: { name: string; countryId?: string; isArrondissement?: boolean; latitude?: number; longitude?: number }): Observable<City> {
+    return this.http.post<City>(`${this.api}/cities`, data).pipe(map(normalizeId));
+  }
+
+  updateCity(id: string, data: { name: string; countryId?: string; isArrondissement?: boolean; latitude?: number; longitude?: number }): Observable<City> {
+    return this.http.put<City>(`${this.api}/cities/${id}`, data).pipe(map(normalizeId));
+  }
+
+  deleteCity(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.api}/cities/${id}`);
   }
 
   getArrondissementsByCity(cityId: string): Observable<Arrondissement[]> {
@@ -49,6 +69,22 @@ export class TerritoryHttpService {
     );
   }
 
+  getArrondissement(id: string): Observable<Arrondissement> {
+    return this.http.get<Arrondissement>(`${this.api}/arrondissements/${id}`).pipe(map(normalizeId));
+  }
+
+  createArrondissement(data: { name: string; cityId: string; latitude?: number; longitude?: number }): Observable<Arrondissement> {
+    return this.http.post<Arrondissement>(`${this.api}/arrondissements`, data).pipe(map(normalizeId));
+  }
+
+  updateArrondissement(id: string, data: { name: string; cityId: string; latitude?: number; longitude?: number }): Observable<Arrondissement> {
+    return this.http.put<Arrondissement>(`${this.api}/arrondissements/${id}`, data).pipe(map(normalizeId));
+  }
+
+  deleteArrondissement(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.api}/arrondissements/${id}`);
+  }
+
   getSectorsByArrondissement(arrondissementId: string): Observable<Sector[]> {
     return this.http.get<Sector[]>(`${this.api}/sectors`, { params: { arrondissementId } }).pipe(
       map((items) => items.map(normalizeId)),
@@ -60,6 +96,22 @@ export class TerritoryHttpService {
     return this.http.get<Sector[]>(`${this.api}/sectors`).pipe(
       map((items) => items.map(normalizeId)),
     );
+  }
+
+  getSector(id: string): Observable<Sector> {
+    return this.http.get<Sector>(`${this.api}/sectors/${id}`).pipe(map(normalizeId));
+  }
+
+  createSector(data: { name: string; arrondissementId?: string; cityId?: string; latitude?: number; longitude?: number }): Observable<Sector> {
+    return this.http.post<Sector>(`${this.api}/sectors`, data).pipe(map(normalizeId));
+  }
+
+  updateSector(id: string, data: { name: string; arrondissementId?: string; cityId?: string; latitude?: number; longitude?: number }): Observable<Sector> {
+    return this.http.put<Sector>(`${this.api}/sectors/${id}`, data).pipe(map(normalizeId));
+  }
+
+  deleteSector(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.api}/sectors/${id}`);
   }
 
   getNeighborhoodsBySector(sectorId: string): Observable<Quartier[]> {
@@ -79,13 +131,28 @@ export class TerritoryHttpService {
     );
   }
 
+  getNeighborhood(id: string): Observable<Quartier> {
+    return this.http.get<Quartier>(`${this.api}/neighborhoods/${id}`).pipe(map(normalizeId));
+  }
+
+  getCityFullDetails(id: string): Observable<{ city: City; arrondissements: Arrondissement[]; neighborhoods: Quartier[] }> {
+    return this.http.get<{ city: City; arrondissements: Arrondissement[]; neighborhoods: Quartier[] }>(
+      `${this.api}/cities/${id}/full-details`,
+    );
+  }
+
+  getNeighborhoodFullDetails(id: string): Observable<{ neighborhood: Quartier; sector?: Sector; arrondissement?: Arrondissement; city?: City }> {
+    return this.http.get<{ neighborhood: Quartier; sector?: Sector; arrondissement?: Arrondissement; city?: City }>(
+      `${this.api}/neighborhoods/${id}/full-details`,
+    );
+  }
+
   /** `latitude`/`longitude` requis côté backend à la création (controllers/territory.controller.js). */
-  createNeighborhood(data: { name: string; code?: string; sectorId: string; latitude: number; longitude: number }): Observable<Quartier> {
+  createNeighborhood(data: { name: string; sectorId?: string; arrondissementId?: string; cityId?: string; latitude?: number; longitude?: number }): Observable<Quartier> {
     return this.http.post<Quartier>(`${this.api}/neighborhoods`, data).pipe(map(normalizeId));
   }
 
-  /** `latitude`/`longitude` optionnels ici (une modification peut ne porter que sur le nom/code) — mais validés côté backend si fournis. */
-  updateNeighborhood(id: string, data: Partial<{ name: string; code: string; sectorId: string; latitude: number; longitude: number }>): Observable<Quartier> {
+  updateNeighborhood(id: string, data: Partial<{ name: string; sectorId: string; arrondissementId: string; cityId: string; latitude: number; longitude: number }>): Observable<Quartier> {
     return this.http.put<Quartier>(`${this.api}/neighborhoods/${id}`, data).pipe(map(normalizeId));
   }
 

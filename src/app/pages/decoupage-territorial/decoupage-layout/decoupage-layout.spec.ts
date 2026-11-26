@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { DecoupageLayout } from './decoupage-layout';
 
@@ -8,7 +9,8 @@ describe('DecoupageLayout', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DecoupageLayout]
+      imports: [DecoupageLayout],
+      providers: [provideRouter([])],
     })
     .compileComponents();
 
