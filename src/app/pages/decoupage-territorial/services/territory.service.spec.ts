@@ -37,18 +37,14 @@ describe('TerritoryService API hierarchy', () => {
     expect(service.getApiUnit('city-1')?.metadata['country_name']).toBe('Burkina Faso');
     expect(service.getApiUnit('sector-1')?.metadata['country_name']).toBe('Burkina Faso');
     expect(service.getApiUnit('quarter-1')?.metadata['country_name']).toBe('Burkina Faso');
-    expect(service.getApiProfile('BF').allowed_relations).toContain(
-      jasmine.objectContaining({ parent: 'COUNTRY', child: 'CITY' }),
-    );
-    expect(service.getApiProfile('BF').allowed_relations).toContain(
-      jasmine.objectContaining({ parent: 'CITY', child: 'ARRONDISSEMENT' }),
-    );
-    expect(service.getApiProfile('BF').allowed_relations).toContain(
-      jasmine.objectContaining({ parent: 'ARRONDISSEMENT', child: 'SECTOR' }),
-    );
-    expect(service.getApiProfile('BF').allowed_relations).toContain(
-      jasmine.objectContaining({ parent: 'SECTOR', child: 'NEIGHBORHOOD' }),
-    );
+    expect(service.getApiUnit('quarter-1')?.active).toBeUndefined();
+    expect(service.getApiParentTypes('NEIGHBORHOOD')).toEqual([
+      'CITY',
+      'ARRONDISSEMENT',
+      'SECTOR',
+    ]);
+    expect(service.getApiChildTypes('SECTOR')).toEqual(['NEIGHBORHOOD']);
+    expect(service.apiListUnits({ countryCode: 'BF', typeCode: 'NEIGHBORHOOD' }).total).toBe(1);
   });
 
   it('crée une ville en conservant la relation avec le pays parent', async () => {
@@ -136,5 +132,33 @@ describe('TerritoryService API hierarchy', () => {
       latitude: 12.3,
       longitude: -1.5,
     });
+  });
+
+  it('supprime une unité via l’API puis recharge les listes', async () => {
+    const deleteNeighborhoodSpy = jasmine.createSpy().and.returnValue(of(undefined));
+    const neighborhoodsSpy = jasmine.createSpy().and.returnValues(
+      of([{ id: 'neighborhood-1', _id: 'neighborhood-1', name: 'Bilbalogo', sectorId: 'sector-1' }]),
+      of([]),
+    );
+    const api = {
+      getCountries: jasmine.createSpy().and.returnValue(of([
+        { id: 'bf', _id: 'bf', name: 'Burkina Faso', code: 'BF' },
+      ])),
+      getAllCities: jasmine.createSpy().and.returnValue(of([])),
+      getAllArrondissements: jasmine.createSpy().and.returnValue(of([])),
+      getAllSectors: jasmine.createSpy().and.returnValue(of([
+        { id: 'sector-1', _id: 'sector-1', name: 'Secteur 1', cityId: 'city-1' },
+      ])),
+      getAllNeighborhoods: neighborhoodsSpy,
+      deleteNeighborhood: deleteNeighborhoodSpy,
+    } as unknown as TerritoryHttpService;
+
+    const service = new TerritoryService(api);
+    await service.loadApiUnits();
+    await service.deleteApiUnit('neighborhood-1', 'NEIGHBORHOOD');
+
+    expect(deleteNeighborhoodSpy).toHaveBeenCalledWith('neighborhood-1');
+    expect(neighborhoodsSpy).toHaveBeenCalledTimes(2);
+    expect(service.getApiUnit('neighborhood-1')).toBeNull();
   });
 });

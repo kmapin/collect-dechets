@@ -1,9 +1,26 @@
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { TerritorialProfile, TerritorialUnit } from '../models/models';
+import { TerritorialUnit } from '../models/models';
 import { TerritoryService } from '../services/territory.service';
 import { UnitFormComponent } from './unit-form.component';
 
 describe('UnitFormComponent', () => {
+  it('surfaces API errors when loading units for the form', async () => {
+    const route = {
+      snapshot: {
+        paramMap: convertToParamMap({}),
+        queryParamMap: convertToParamMap({}),
+      },
+    } as ActivatedRoute;
+    const territory = {
+      loadApiUnits: jasmine.createSpy().and.rejectWith(new Error('API indisponible')),
+    } as unknown as TerritoryService;
+    const component = new UnitFormComponent(route, {} as Router, territory);
+
+    await component.ngOnInit();
+
+    expect(component.error()).toBe('API indisponible');
+  });
+
   it('keeps the existing immediate parent selected when editing a unit', async () => {
     const unit: TerritorialUnit = {
       id: 'neighborhood-1',
@@ -15,23 +32,12 @@ describe('UnitFormComponent', () => {
       ancestor_ids: ['country-1', 'city-1', 'arrondissement-1', 'sector-1'],
       depth: 4,
       code: null,
-      active: true,
       sort_order: 0,
       metadata: {},
       created_at: '',
       updated_at: '',
       created_by: null,
       updated_by: null,
-    };
-    const profile: TerritorialProfile = {
-      id: 'profile-1',
-      country_code: 'BF',
-      country_name: 'Burkina Faso',
-      types: [{ code: 'NEIGHBORHOOD', label: 'Quartier', order: 4, optional: true }],
-      allowed_relations: [{ parent: 'SECTOR', child: 'NEIGHBORHOOD' }],
-      active: true,
-      created_at: '',
-      updated_at: '',
     };
     const parents = ['Secteur 1', 'Secteur 2', 'Secteur 3'].map((name, index): TerritorialUnit => ({
       ...unit,
@@ -48,11 +54,10 @@ describe('UnitFormComponent', () => {
     } as ActivatedRoute;
     const territory = {
       loadApiUnits: jasmine.createSpy().and.resolveTo([]),
-      getApiProfiles: () => [profile],
-      getApiProfile: () => profile,
       getApiUnit: (id: string) => id === unit.id ? unit : null,
       getApiUnits: () => parents,
-      labelOf: (type: string) => type,
+      getApiParentTypes: (type: string) => type === 'NEIGHBORHOOD' ? ['SECTOR'] : [],
+      getApiChildTypes: () => [],
     } as unknown as TerritoryService;
 
     const component = new UnitFormComponent(route, {} as Router, territory);

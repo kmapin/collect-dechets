@@ -9,6 +9,23 @@ import { Country, City, Arrondissement, Sector, Quartier } from '../../../models
 type Unit = TerritorialUnit;
 type CityWithCountryReference = City & { countryId?: string };
 
+export const API_UNIT_TYPE_CODES = [
+  'COUNTRY',
+  'CITY',
+  'ARRONDISSEMENT',
+  'SECTOR',
+  'NEIGHBORHOOD',
+] as const;
+
+// These parent choices mirror the relation fields used by the existing territorial DTO operations.
+const API_PARENT_TYPES: Record<string, readonly string[]> = {
+  COUNTRY: [],
+  CITY: ['COUNTRY'],
+  ARRONDISSEMENT: ['CITY'],
+  SECTOR: ['CITY', 'ARRONDISSEMENT'],
+  NEIGHBORHOOD: ['CITY', 'ARRONDISSEMENT', 'SECTOR'],
+};
+
 @Injectable({ providedIn: 'root' })
 export class TerritoryService {
   private store: MockUnit[] = MOCK_UNITS.map((u) => ({ ...u, ancestor_ids: [...u.ancestor_ids] }));
@@ -69,7 +86,6 @@ export class TerritoryService {
         ancestor_ids: ancestors,
         depth: ancestors.length,
         code: typeCode === 'COUNTRY' ? country.code ?? null : null,
-        active: true,
         sort_order: typeCode === 'ARRONDISSEMENT' ? arrondissementNumber(item.name) ?? 0 : 0,
         metadata: {
           latitude: item.latitude ?? null,
@@ -136,7 +152,6 @@ export class TerritoryService {
     search?: string;
     countryCode?: string;
     typeCode?: string;
-    activeOnly?: boolean;
     page?: number;
     pageSize?: number;
   } = {}): { data: TerritorialUnit[]; total: number } {
@@ -147,7 +162,6 @@ export class TerritoryService {
       const q = normalizeName(params.search);
       rows = rows.filter((u) => u.normalized_name.includes(q));
     }
-    if (params.activeOnly !== undefined) rows = rows.filter((u) => u.active === params.activeOnly);
 
     rows.sort((a, b) => {
       const na = arrondissementNumber(a.name);
@@ -196,38 +210,14 @@ export class TerritoryService {
       .sort((a, b) => a.depth - b.depth);
   }
 
-  getApiProfile(countryCode: string): TerritorialProfile {
-    const country = this.apiUnits.find((u) => u.type_code === 'COUNTRY' && u.country_code === countryCode);
-    return {
-      id: country?.id ?? 'api-profile',
-      country_code: countryCode,
-      country_name: country?.name ?? countryCode,
-      types: [
-        { code: 'COUNTRY', label: 'Pays', order: 0, optional: false },
-        { code: 'CITY', label: 'Ville', order: 1, optional: false },
-        { code: 'ARRONDISSEMENT', label: 'Arrondissement', order: 2, optional: true },
-        { code: 'SECTOR', label: 'Secteur', order: 3, optional: true },
-        { code: 'NEIGHBORHOOD', label: 'Quartier', order: 4, optional: true },
-      ],
-      allowed_relations: [
-        { parent: 'COUNTRY', child: 'CITY' },
-        { parent: 'CITY', child: 'ARRONDISSEMENT' },
-        { parent: 'CITY', child: 'SECTOR' },
-        { parent: 'CITY', child: 'NEIGHBORHOOD' },
-        { parent: 'ARRONDISSEMENT', child: 'SECTOR' },
-        { parent: 'ARRONDISSEMENT', child: 'NEIGHBORHOOD' },
-        { parent: 'SECTOR', child: 'NEIGHBORHOOD' },
-      ],
-      active: true,
-      created_at: country?.created_at ?? '',
-      updated_at: country?.updated_at ?? '',
-    };
+  getApiParentTypes(typeCode: string): string[] {
+    return [...(API_PARENT_TYPES[typeCode] ?? [])];
   }
 
-  getApiProfiles(): TerritorialProfile[] {
-    return this.apiUnits
-      .filter((u) => u.type_code === 'COUNTRY')
-      .map((u) => this.getApiProfile(u.country_code));
+  getApiChildTypes(typeCode: string): string[] {
+    return API_UNIT_TYPE_CODES.filter((childType) =>
+      API_PARENT_TYPES[childType].includes(typeCode),
+    );
   }
 
   async createApiUnit(input: {
@@ -653,36 +643,13 @@ export class TerritoryService {
 
   // ===== Historique (mock en mémoire) =====
 
-  auditLogs: {
-    id: string;
-    action: string;
-    entity_type: string;
-    entity_id: string | null;
-    entity_name: string | null;
-    details: Record<string, any>;
-    created_at: string;
-  }[] = [];
-
   logAudit(
-    action: string,
-    entityType: string,
-    entityId: string | null,
-    entityName: string | null,
-    details: Record<string, any>
+    _action: string,
+    _entityType: string,
+    _entityId: string | null,
+    _entityName: string | null,
+    _details: Record<string, any>
   ): void {
-    this.auditLogs.unshift({
-      id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      action,
-      entity_type: entityType,
-      entity_id: entityId,
-      entity_name: entityName,
-      details,
-      created_at: new Date().toISOString(),
-    });
-    if (this.auditLogs.length > 200) this.auditLogs.pop();
-  }
-
-  getAuditLogs(limit = 100) {
-    return this.auditLogs.slice(0, limit);
+    // No audit endpoint is documented; do not create transient records that look like history.
   }
 }

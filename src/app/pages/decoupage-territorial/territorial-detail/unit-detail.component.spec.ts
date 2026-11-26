@@ -20,7 +20,6 @@ describe('UnitDetailComponent', () => {
     ancestor_ids: [],
     depth: 0,
     code: null,
-    active: true,
     sort_order: 0,
     metadata: {},
     created_at: '',
@@ -48,7 +47,7 @@ describe('UnitDetailComponent', () => {
             getApiAncestors: () => [],
             getApiChildren: () => [],
             getApiDescendants: () => [],
-            getApiProfile: () => ({ allowed_relations: [], types: [] }),
+            getApiChildTypes: () => [],
           },
         },
       ],
@@ -69,6 +68,7 @@ describe('UnitDetailComponent', () => {
     expect(getApiUnit.calls.allArgs()).toEqual([['city-1'], ['city-2']]);
     expect(fixture.nativeElement.textContent).toContain('Bobo-Dioulasso');
     expect(fixture.nativeElement.querySelector('.unit-location-map')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-status-pill')).toBeNull();
   });
 
   it('shows the location map when both coordinates are available', async () => {

@@ -42,7 +42,7 @@ export interface TerritorialUnit {
   ancestor_ids: string[];
   depth: number;
   code: string | null;
-  active: boolean;
+  active?: boolean;
   sort_order: number;
   metadata: Record<string, any>;
   created_at: string;

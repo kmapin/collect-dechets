@@ -1,13 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TerritoryService } from '../services/territory.service';
-import { ImportParserService } from '../services/import-parser.service';
-import { TerritorialUnit, TerritorialProfile, TYPE_LABELS } from '../models/models';
+import { API_UNIT_TYPE_CODES, TerritoryService } from '../services/territory.service';
+import { TerritorialUnit, TYPE_LABELS } from '../models/models';
 import { PageHeaderComponent } from '../../../shared/decoupage-territorial/page-header.component';
 import { TypeBadgeComponent } from '../../../shared/decoupage-territorial/type-badge.component';
-import { StatusPillComponent } from '../../../shared/decoupage-territorial/status-pill.component';
 import { formatDate } from '../services/territorial-utils';
-import { Search, Plus, Download, Eye, Pencil, ChevronLeft, ChevronRight, RefreshCw, Map as MapIcon } from 'lucide-angular';
+import { Search, Plus, Eye, Pencil, ChevronLeft, ChevronRight, RefreshCw, Map as MapIcon } from 'lucide-angular';
 import { IconComponent } from '../../../shared/decoupage-territorial//icon.component';
 
 @Component({
@@ -17,7 +15,6 @@ import { IconComponent } from '../../../shared/decoupage-territorial//icon.compo
     RouterLink,
     PageHeaderComponent,
     TypeBadgeComponent,
-    StatusPillComponent,
     IconComponent,
   ],
   templateUrl: './units-list.component.html',
@@ -29,26 +26,24 @@ export class UnitsListComponent {
   loading = signal(false);
   error = signal<string | null>(null);
 
-  profiles: TerritorialProfile[];
+  countries: TerritorialUnit[] = [];
   selectedCountry = signal('');
   searchText = signal('');
   selectedType = signal('');
-  activeFilter = signal<'all' | 'active' | 'inactive'>('all');
   page = signal(1);
   pageSize = 15;
 
   Math = Math;
 
-  constructor(public territory: TerritoryService, private parser: ImportParserService) {
-    this.profiles = [];
+  constructor(public territory: TerritoryService) {
     void this.initialize();
   }
 
   private async initialize() {
     try {
       await this.territory.loadApiUnits();
-      this.profiles = this.territory.getApiProfiles();
-      if (this.profiles.length > 0) this.selectedCountry.set(this.profiles[0].country_code);
+      this.countries = this.territory.getApiUnits().filter((unit) => unit.type_code === 'COUNTRY');
+      if (this.countries.length > 0) this.selectedCountry.set(this.countries[0].country_code);
       this.load();
     } catch (e: any) {
       this.error.set(e?.message || 'Impossible de charger les données territoriales.');
@@ -57,15 +52,17 @@ export class UnitsListComponent {
   }
 
   get typeOptions() {
-    const profile = this.profiles.find((p) => p.country_code === this.selectedCountry());
-    return profile?.types ?? [];
+    return API_UNIT_TYPE_CODES.map((code) => ({
+      code,
+      label: TYPE_LABELS[code] ?? code,
+    }));
   }
 
   get typeLabel(): typeof TYPE_LABELS {
     return TYPE_LABELS;
   }
 
-  icons = { Search, Plus, Download, Eye, Pencil, ChevronLeft, ChevronRight, RefreshCw, MapIcon };
+  icons = { Search, Plus, Eye, Pencil, ChevronLeft, ChevronRight, RefreshCw, MapIcon };
 
   async load() {
     this.loading.set(true);
@@ -74,8 +71,8 @@ export class UnitsListComponent {
       await this.territory.loadApiUnits();
       const result = this.territory.apiListUnits({
         search: this.searchText() || undefined,
+        countryCode: this.selectedCountry() || undefined,
         typeCode: this.selectedType() || undefined,
-        activeOnly: this.activeFilter() === 'active' ? true : this.activeFilter() === 'inactive' ? false : undefined,
         page: this.page(),
         pageSize: this.pageSize,
       });
@@ -107,12 +104,6 @@ export class UnitsListComponent {
     this.load();
   }
 
-  onActiveFilter(value: 'all' | 'active' | 'inactive') {
-    this.activeFilter.set(value);
-    this.page.set(1);
-    this.load();
-  }
-
   goToPage(p: number) {
     if (p < 1 || p > this.totalPages()) return;
     this.page.set(p);
@@ -121,14 +112,6 @@ export class UnitsListComponent {
 
   totalPages() {
     return Math.max(1, Math.ceil(this.total() / this.pageSize));
-  }
-
-  downloadTemplate() {
-    const profile = this.profiles.find((p) => p.country_code === this.selectedCountry());
-    if (!profile) return;
-    this.parser.generateTemplate(profile).then((blob) => {
-      this.parser.downloadBlob(blob, `modele-territorial-${profile.country_code}.csv`);
-    });
   }
 
   fmt = formatDate;

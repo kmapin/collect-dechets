@@ -1,12 +1,8 @@
 <div class="page-container">
   <app-page-header
     title="Unités territoriales"
-    subtitle="Référentiel géographique centralisé — pays, régions, provinces, villes et subdivisions"
+    subtitle="Référentiel géographique centralisé — pays, villes et subdivisions"
   >
-    <button class="btn btn-secondary" (click)="downloadTemplate()">
-      <app-icon [icon]="icons.Download" [size]="16" />
-      Modèle Excel
-    </button>
     <a routerLink="/territorial/units/new" class="btn btn-primary">
       <app-icon [icon]="icons.Plus" [size]="16" />
       Nouvelle unité
@@ -24,8 +20,8 @@
       />
     </div>
     <select [value]="selectedCountry()" (change)="onCountryChange($any($event.target).value)" class="filter-select">
-      @for (p of profiles; track p.country_code) {
-        <option [value]="p.country_code">{{ p.country_name }}</option>
+      @for (country of countries; track country.id) {
+        <option [value]="country.country_code">{{ country.name }}</option>
       }
     </select>
     <select [value]="selectedType()" (change)="onTypeChange($any($event.target).value)" class="filter-select">
@@ -34,11 +30,6 @@
         <option [value]="t.code">{{ t.label }}</option>
       }
     </select>
-    <div class="segmented">
-      <button [class.active]="activeFilter() === 'all'" (click)="onActiveFilter('all')">Tous</button>
-      <button [class.active]="activeFilter() === 'active'" (click)="onActiveFilter('active')">Actifs</button>
-      <button [class.active]="activeFilter() === 'inactive'" (click)="onActiveFilter('inactive')">Inactifs</button>
-    </div>
     <button class="icon-btn" (click)="load()" title="Rafraîchir">
       <app-icon [icon]="icons.RefreshCw" [size]="16" />
     </button>
@@ -54,7 +45,7 @@
     <div class="empty-state">
       <app-icon [icon]="icons.MapIcon" [size]="40" />
       <h3>Aucune unité territoriale</h3>
-      <p>Commencez par créer un pays, une région ou importez un fichier Excel.</p>
+      <p>Commencez par créer un pays ou une ville.</p>
       <a routerLink="/territorial/units/new" class="btn btn-primary">
         <app-icon [icon]="icons.Plus" [size]="16" />
         Créer la première unité
@@ -69,14 +60,13 @@
             <th>Type</th>
             <th>Pays</th>
             <th class="num-col">Subdiv.</th>
-            <th>Statut</th>
             <th class="date-col">Créé le</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           @for (u of units(); track u.id) {
-            <tr [class.inactive]="!u.active">
+            <tr>
               <td class="name-cell">
                 <a [routerLink]="['/territorial/units', u.id]" class="unit-link">{{ u.name }}</a>
                 @if (u.code) {
@@ -93,9 +83,6 @@
                 } @else {
                   {{ territory.getApiChildren(u.id).length }}
                 }
-              </td>
-              <td>
-                <app-status-pill [active]="u.active" />
               </td>
               <td class="date-col muted">{{ fmt(u.created_at) }}</td>
               <td class="actions-cell">

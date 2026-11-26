@@ -8,9 +8,8 @@ import { TerritoryService } from '../services/territory.service';
 import { TerritorialUnit, TYPE_LABELS } from '../models/models';
 import { PageHeaderComponent } from '../../../shared/decoupage-territorial/page-header.component';
 import { TypeBadgeComponent } from '../../../shared/decoupage-territorial/type-badge.component';
-import { StatusPillComponent } from '../../../shared/decoupage-territorial/status-pill.component';
 import { formatDate } from '../services/territorial-utils';
-import { Pencil, ChevronDown, ChevronRight, Ban, CheckCircle2, AlertTriangle, Plus, Trash2 } from 'lucide-angular';
+import { Pencil, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-angular';
 import { IconComponent } from '../../../shared/decoupage-territorial/icon.component';
 
 interface TreeNode {
@@ -22,7 +21,7 @@ interface TreeNode {
 @Component({
   selector: 'app-unit-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, PageHeaderComponent, TypeBadgeComponent, StatusPillComponent, IconComponent],
+  imports: [CommonModule, RouterLink, PageHeaderComponent, TypeBadgeComponent, IconComponent],
   templateUrl: './unit-detail.component.html',
   styleUrl: './unit-detail.component.scss',
 })
@@ -49,9 +48,8 @@ export class UnitDetailComponent implements OnInit, OnDestroy {
   children = signal<TerritorialUnit[]>([]);
   loading = signal(true);
   actionError = signal<string | null>(null);
-  actionWarning = signal<string | null>(null);
   TYPE_LABELS = TYPE_LABELS;
-  icons = { Pencil, ChevronDown, ChevronRight, Ban, CheckCircle2, AlertTriangle, Plus, Trash2 };
+  icons = { Pencil, ChevronDown, ChevronRight, Plus, Trash2 };
 
   constructor(
     private route: ActivatedRoute,
@@ -77,7 +75,6 @@ export class UnitDetailComponent implements OnInit, OnDestroy {
     const sequence = ++this.loadSequence;
     this.loading.set(true);
     this.actionError.set(null);
-    this.actionWarning.set(null);
     this.unit.set(null);
     this.ancestors.set([]);
     this.children.set([]);
@@ -124,13 +121,6 @@ export class UnitDetailComponent implements OnInit, OnDestroy {
     node.expanded = !node.expanded;
   }
 
-  async toggleActive() {
-    this.actionError.set(null);
-    this.actionWarning.set(
-      'Le contrat API ne fournit pas de champ actif/inactif pour ces unités territoriales.',
-    );
-  }
-
   async deleteUnit() {
     const unit = this.unit();
     if (!unit) return;
@@ -149,13 +139,8 @@ export class UnitDetailComponent implements OnInit, OnDestroy {
   }
 
   allowedChildrenTypes(unit: TerritorialUnit): { code: string; label: string }[] {
-    const profile = this.territory.getApiProfile(unit.country_code);
-    return profile.allowed_relations
-      .filter((r) => r.parent === unit.type_code)
-      .map((r) => ({
-        code: r.child,
-        label: profile.types.find((t) => t.code === r.child)?.label ?? r.child,
-      }));
+    return this.territory.getApiChildTypes(unit.type_code)
+      .map((code) => ({ code, label: TYPE_LABELS[code] ?? code }));
   }
 
   fmt = formatDate;

@@ -47,30 +47,6 @@
   }
 }
 
-.segmented {
-  display: flex;
-  background: var(--color-neutral-100);
-  border-radius: var(--radius-md);
-  padding: 3px;
-
-  button {
-    border: none;
-    background: transparent;
-    padding: 6px 14px;
-    border-radius: 7px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--color-neutral-600);
-    transition: all 0.15s;
-
-    &.active {
-      background: #fff;
-      color: var(--color-primary-700);
-      box-shadow: var(--shadow-sm);
-    }
-  }
-}
-
 .name-cell {
   font-weight: 500;
 }

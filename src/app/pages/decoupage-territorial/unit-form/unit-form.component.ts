@@ -2,8 +2,8 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild, signal } from '@an
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import * as L from 'leaflet';
-import { TerritoryService } from '../services/territory.service';
-import { TerritorialUnit, TerritorialProfile, TerritoryType } from '../models/models';
+import { API_UNIT_TYPE_CODES, TerritoryService } from '../services/territory.service';
+import { TerritorialUnit, TYPE_LABELS } from '../models/models';
 import { PageHeaderComponent } from '../../../shared/decoupage-territorial/page-header.component';
 import { cleanCell, normalizeName } from '../services/territorial-utils';
 import { Save, AlertTriangle, ChevronDown } from 'lucide-angular';
@@ -17,7 +17,6 @@ import { IconComponent } from '../../../shared/decoupage-territorial/icon.compon
   styleUrl: './unit-form.component.scss',
 })
 export class UnitFormComponent implements OnInit, OnDestroy {
-  profile!: TerritorialProfile;
   editId: string | null = null;
   editUnit: TerritorialUnit | null = null;
 
@@ -28,8 +27,6 @@ export class UnitFormComponent implements OnInit, OnDestroy {
   parentSearch = signal('');
   parentDropdownOpen = signal(false);
   parentTypeCode = signal('COUNTRY');
-  parentChain = signal<string[]>([]); // ids sélectionnés dans la cascade
-  active = signal(true);
 
   error = signal<string | null>(null);
   saving = signal(false);
@@ -52,14 +49,13 @@ export class UnitFormComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    await this.territory.loadApiUnits();
-    const profiles = this.territory.getApiProfiles();
-    const country = profiles[0];
-    if (!country) {
-      this.profile = this.territory.getApiProfile('API');
-    } else {
-      this.profile = country;
+    try {
+      await this.territory.loadApiUnits();
+    } catch (e: unknown) {
+      this.error.set(e instanceof Error ? e.message : 'Impossible de charger les données territoriales.');
+      return;
     }
+
     const id = this.route.snapshot.paramMap.get('id');
     const typeCode = this.route.snapshot.queryParamMap.get('typeCode');
     const parentId = this.route.snapshot.queryParamMap.get('parentId');
@@ -76,9 +72,7 @@ export class UnitFormComponent implements OnInit, OnDestroy {
       this.latitude.set(this.coordinateFrom(unit, 'latitude'));
       this.longitude.set(this.coordinateFrom(unit, 'longitude'));
       this.syncMapMarker(true);
-      this.active.set(unit.active);
       this.parentTypeCode.set(unit.type_code);
-      this.parentChain.set([...unit.ancestor_ids, unit.parent_id ?? 'ROOT'].filter(Boolean));
       this.cascadeSelections = unit.parent_id ? [unit.parent_id] : [];
     } else if (parentId && typeCode) {
       // Création d'une subdivision depuis la fiche d'un parent
@@ -96,11 +90,8 @@ export class UnitFormComponent implements OnInit, OnDestroy {
 
   cascadeSelections: string[] = [];
 
-  // Types territoriaux réellement pris en charge par l’API.
-  get cascadeTypes(): TerritoryType[] {
-    return [...this.profile.types]
-      .filter((t) => t.code !== 'CUSTOM')
-      .sort((a, b) => a.order - b.order);
+  get cascadeTypes(): { code: string; label: string }[] {
+    return API_UNIT_TYPE_CODES.map((code) => ({ code, label: TYPE_LABELS[code] ?? code }));
   }
 
   // Le type sélectionné dans la cascade est celui correspondant au dernier niveau choisi
@@ -110,24 +101,22 @@ export class UnitFormComponent implements OnInit, OnDestroy {
   }
 
   get selectedTypeLabel(): string {
-    return this.profile.types.find((t) => t.code === this.selectedType)?.label ?? this.selectedType;
+    return TYPE_LABELS[this.selectedType] ?? this.selectedType;
   }
 
   get parentCandidates(): TerritorialUnit[] {
-    // Unités existantes dont le type autorise selectedType comme enfant
-    const allowedParents = this.profile.allowed_relations
-      .filter((r) => r.child === this.selectedType)
-      .map((r) => r.parent);
+    const supportedParentTypes = this.territory.getApiParentTypes(this.selectedType);
     return this.territory
       .getApiUnits()
       .filter((u) =>
-        allowedParents.includes(u.type_code)
-        && (u.active || u.id === this.parentId || u.id === this.editUnit?.parent_id),
+        supportedParentTypes.includes(u.type_code)
+        || u.id === this.parentId
+        || u.id === this.editUnit?.parent_id,
       );
   }
 
   parentOptionLabel(unit: TerritorialUnit): string {
-    return `${unit.name} (${this.territory.labelOf(unit.type_code)})`;
+    return `${unit.name} (${TYPE_LABELS[unit.type_code] ?? unit.type_code})`;
   }
 
   get selectedParent(): TerritorialUnit | null {
@@ -154,9 +143,7 @@ export class UnitFormComponent implements OnInit, OnDestroy {
     if (!skipReset) {
       const parentUnit = this.parentId ? this.territory.getApiUnit(this.parentId) : null;
       if (parentUnit) {
-        const nextTypes = this.profile.allowed_relations
-          .filter((r) => r.parent === parentUnit.type_code)
-          .map((r) => r.child);
+        const nextTypes = this.territory.getApiChildTypes(parentUnit.type_code);
         if (nextTypes.length === 1) {
           this.parentTypeCode.set(nextTypes[0]);
         } else if (nextTypes.length > 1) {

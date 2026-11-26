@@ -23,13 +23,6 @@
       @if (actionError()) {
         <div class="alert alert-error">{{ actionError() }}</div>
       }
-      @if (actionWarning()) {
-        <div class="alert alert-warning">
-          <app-icon [icon]="icons.AlertTriangle" [size]="16" />
-          {{ actionWarning() }}
-        </div>
-      }
-
       <div class="detail-grid">
         <div class="card info-card">
           <h3>Informations</h3>
@@ -58,7 +51,6 @@
                 }
               </dd>
             </div>
-            <div><dt>Statut</dt><dd><app-status-pill [active]="u.active" /></dd></div>
             <div><dt>Créé le</dt><dd>{{ fmt(u.created_at) }}</dd></div>
             <div><dt>Modifié le</dt><dd>{{ fmt(u.updated_at) }}</dd></div>
           </dl>
@@ -99,7 +91,7 @@
                 <ng-container *ngTemplateOutlet="treeNode; context: { $implicit: child }" />
               }
               <ng-template #treeNode let-node>
-                <div class="tree-item" [class.inactive]="!node.unit.active">
+                <div class="tree-item">
                   <button class="tree-toggle" (click)="toggle(node)" [disabled]="node.children.length === 0">
                     @if (node.children.length > 0) {
                       @if (node.expanded) {
@@ -113,7 +105,6 @@
                   </button>
                   <a [routerLink]="['/territorial/units', node.unit.id]" class="tree-link">{{ node.unit.name }}</a>
                   <app-type-badge [typeCode]="node.unit.type_code" [label]="TYPE_LABELS[node.unit.type_code] || node.unit.type_code" />
-                  <app-status-pill [active]="node.unit.active" />
                   @if (node.unit.type_code !== 'NEIGHBORHOOD') {
                     <span class="tree-count">{{ node.children.length }}</span>
                   }
