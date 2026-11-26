@@ -45,6 +45,9 @@ describe('agent.mapper', () => {
         datePaiement: '2026-07-20T09:00:00.000Z',
         status: 'EN_ATTENTE_VALIDATION',
         provider: 'MOOV',
+        reference: null,
+        failureReason: null,
+        rejectionReason: null,
         libelle: 'En attente de validation — virement Moov Money réel après validation',
       };
       expect(mapPaiementAgentDto(dto)).toEqual({
@@ -54,7 +57,9 @@ describe('agent.mapper', () => {
         datePaiement: '2026-07-20T09:00:00.000Z',
         status: 'EN_ATTENTE_VALIDATION',
         provider: 'MOOV',
+        reference: undefined,
         failureReason: undefined,
+        rejectionReason: undefined,
         libelle: 'En attente de validation — virement Moov Money réel après validation',
       });
     });

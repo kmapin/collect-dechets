@@ -10,15 +10,16 @@ function _mapPermissions(valeur: unknown): FinancePermission[] {
 export function mapSessionUtilisateurDto(dto: unknown): SessionUtilisateur {
   const d = dto as Record<string, unknown>;
   const a = d['agence'] as Record<string, unknown> | null | undefined;
+  const agence = a
+    ? { nom: String(a['nom']), ville: a['ville'] ? String(a['ville']) : undefined, quartier: a['quartier'] ? String(a['quartier']) : undefined }
+    : undefined;
   return {
     idUtilisateur: String(d['idUtilisateur']),
     nomAffiche: String(d['nomAffiche']),
     role: d['role'] as Role,
     droitsFinance: Boolean(d['droitsFinance']),
     permissions: _mapPermissions(d['permissions']),
-    agence: a
-      ? { nom: String(a['nom']), ville: a['ville'] ? String(a['ville']) : undefined, quartier: a['quartier'] ? String(a['quartier']) : undefined }
-      : undefined,
+    ...(agence ? { agence } : {}),
   };
 }
 

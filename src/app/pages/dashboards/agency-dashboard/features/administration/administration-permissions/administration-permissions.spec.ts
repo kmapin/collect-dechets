@@ -5,6 +5,11 @@ import { AdministrationUsersService, UtilisateurAdministration } from '../servic
 import { NotificationService } from '../../../../../../services/notification.service';
 import { AuthService } from '../../../../../../services/auth.service';
 
+const FILTERS_STORAGE_KEY = 'agencyAdministration.administrationPermissions';
+
+beforeEach(() => sessionStorage.removeItem(FILTERS_STORAGE_KEY));
+afterEach(() => sessionStorage.removeItem(FILTERS_STORAGE_KEY));
+
 describe('AdministrationPermissions (écran dédié, sans contenu finance)', () => {
   let administrationUsersSpy: jasmine.SpyObj<AdministrationUsersService>;
   let notificationSpy: jasmine.SpyObj<NotificationService>;

@@ -4,6 +4,7 @@ import { NotificationService } from './services/notification.service';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { rememberTerritorialImportReturnUrl } from './core/territorial-import-return';
 
 export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>>  => {
   const notificationService = inject(NotificationService);
@@ -26,6 +27,7 @@ export const authInterceptorInterceptor: HttpInterceptorFn = (req: HttpRequest<u
       // dédiée plutôt que de laisser chaque écran échouer silencieusement à sa façon.
       const estPanneServeur = error.status === 0 || [502, 503, 504].includes(error.status);
       if (estPanneServeur && !router.url.startsWith('/indisponible')) {
+        rememberTerritorialImportReturnUrl(router.url);
         router.navigateByUrl('/indisponible');
       }
 

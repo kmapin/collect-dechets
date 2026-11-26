@@ -9,6 +9,11 @@ import { AuthService } from '../../../../../../services/auth.service';
 import { Role, Utilisateur } from '../../../../financial-dashboard/models';
 import { SessionService } from '../../../../financial-dashboard/data-access/contracts/session.service';
 
+const FILTERS_STORAGE_KEY = 'agencyAdministration.rolesAccess';
+
+beforeEach(() => sessionStorage.removeItem(FILTERS_STORAGE_KEY));
+afterEach(() => sessionStorage.removeItem(FILTERS_STORAGE_KEY));
+
 describe('RolesAccess (écran "Droits financiers" — plus de section Administration, voir administration-permissions/)', () => {
   let sessionSpy: jasmine.SpyObj<SessionService>;
   let administrationUsersSpy: jasmine.SpyObj<AdministrationUsersService>;

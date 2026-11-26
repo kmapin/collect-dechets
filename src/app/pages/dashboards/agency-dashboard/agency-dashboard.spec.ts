@@ -4,8 +4,8 @@ import { AgencyDashboard } from './agency-dashboard';
 
 function stubLoaders(component: AgencyDashboard, except: string[] = []): void {
   const loaderNames = [
-    'initializeCitiesAndNeighborhoods', 'initializeFiltersData',
-    'loadAgencyStatistics', 'loadAgencyData', 'loadEmployees', 'loadCollectors',
+    'loadAgencyStatistics', 'loadAgencyData', 'loadAgencyRatings', 'loadCollectors',
+    'loadDemandesCollecte',
     'loadCollectDay', 'loadAgencyReports', 'loadVehicles', 'loadTariffs',
     'loadPlannings', 'loadZones', 'getAllCountries', 'loadCollectHistory',
     'countUnreadMessages', 'userMessages',
@@ -20,10 +20,12 @@ describe('AgencyDashboard - signalements unifiés (Prompt 06)', () => {
   let agencyServiceSpy: { getAgencySignalements$: jasmine.Spy; assignSignalementToTeam$: jasmine.Spy; resolveSignalement$: jasmine.Spy };
   let notificationServiceSpy: { showSuccess: jasmine.Spy; showError: jasmine.Spy };
   let newNotification$: Subject<any>;
+  let incomingMessage$: Subject<any>;
   let websocketServiceSpy: { onNewNotification: jasmine.Spy };
 
   beforeEach(() => {
     newNotification$ = new Subject();
+    incomingMessage$ = new Subject();
     agencyServiceSpy = {
       getAgencySignalements$: jasmine.createSpy('getAgencySignalements$').and.returnValue({
         subscribe: ({ next }: any) => next && next([]),
@@ -55,7 +57,7 @@ describe('AgencyDashboard - signalements unifiés (Prompt 06)', () => {
       {} as any,
       {} as any,
       websocketServiceSpy as any,
-      {} as any,
+      { onIncomingMessage$: () => incomingMessage$.asObservable() } as any,
       {} as any,
       {} as any,
     );

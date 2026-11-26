@@ -40,6 +40,14 @@ describe('finance.mapper', () => {
         datePaiement: '2026-07-15T08:30:00.000Z',
         modePaiement: 'ORANGE_MONEY',
         clientNom: 'Ouédraogo Awa',
+        grossAmount: null,
+        feeType: null,
+        feeValue: null,
+        feeAmount: null,
+        feePayer: null,
+        netAmount: null,
+        dateDebut: null,
+        dateFin: null,
       };
       expect(mapPaiementListeDto(dto)).toEqual({
         idPaiement: '64f1a2b3c4d5e6f7a8b9c0d1',
@@ -49,6 +57,14 @@ describe('finance.mapper', () => {
         datePaiement: '2026-07-15T08:30:00.000Z',
         modePaiement: 'Orange Money',
         clientNom: 'Ouédraogo Awa',
+        grossAmount: undefined,
+        feeType: undefined,
+        feeValue: undefined,
+        feeAmount: undefined,
+        feePayer: undefined,
+        netAmount: undefined,
+        dateDebut: undefined,
+        dateFin: undefined,
       });
     });
   });
@@ -66,6 +82,18 @@ describe('finance.mapper', () => {
         montant: 20000,
         dateRetrait: '2026-07-20T12:00:00.000Z',
         motif: 'Réapprovisionnement caisse',
+        statut: undefined,
+        initiateurNom: undefined,
+        traitePar: undefined,
+        dateTraitement: undefined,
+        motifRejet: undefined,
+        grossAmount: undefined,
+        feeType: undefined,
+        feeValue: undefined,
+        feeAmount: undefined,
+        feeOption: undefined,
+        netAmountReceived: undefined,
+        walletDebitAmount: undefined,
       });
     });
 

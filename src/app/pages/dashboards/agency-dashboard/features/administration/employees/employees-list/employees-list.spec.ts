@@ -9,6 +9,7 @@ import { TerritoryHttpService } from '../../../../../../../services/territory-ht
 import { AgencyImportService } from '../../../../../../../services/agency-import.service';
 
 describe('EmployeesList', () => {
+  const FILTERS_STORAGE_KEY = 'agencyAdministration.employees';
   let employeeServiceSpy: { list: jasmine.Spy; remove: jasmine.Spy };
   let authServiceSpy: { getCurrentUser: jasmine.Spy };
   let confirmDialogSpy: { confirm: jasmine.Spy };
@@ -18,6 +19,9 @@ describe('EmployeesList', () => {
   let agencyImportServiceSpy: jasmine.SpyObj<AgencyImportService>;
 
   const RESULTAT_VIDE = { data: [], total: 0, page: 1, limit: 10, totalPages: 1 };
+
+  beforeEach(() => sessionStorage.removeItem(FILTERS_STORAGE_KEY));
+  afterEach(() => sessionStorage.removeItem(FILTERS_STORAGE_KEY));
 
   function creerComposant(user: any): EmployeesList {
     employeeServiceSpy = {

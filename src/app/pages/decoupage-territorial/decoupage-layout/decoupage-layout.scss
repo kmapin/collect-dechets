@@ -4,63 +4,21 @@
 
 .app-shell {
   min-height: 100vh;
-  background: var(--color-neutral-50);
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-//   justify-content: center;
-  padding: 10px 24px;
-  background: var(--color-neutral-50);
-}
-
-.topbar-nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  min-height: 62px;
-  padding: 5px;
-  background: var(--color-neutral-0);
-  border: 1px solid var(--color-neutral-200);
-  border-radius: 16px;
-  box-shadow: var(--shadow-md);
-  overflow-x: auto;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-.nav-item {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 52px;
-  padding: 0 20px;
-  border-radius: 10px;
-  color: var(--color-neutral-500);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    color: var(--color-primary-700);
-    background: var(--color-primary-50);
-  }
-
-  &.active {
-    color: var(--color-neutral-0);
-    background: #347ff0;
-    box-shadow: 0 4px 10px rgba(52, 127, 240, 0.24);
-  }
+  background: #f8fafc;
+  --territorial-page-gutter: clamp(16px, 2.4vw, 32px);
+  --territorial-surface: #f8fafc;
+  --territorial-card: #ffffff;
+  --territorial-border: #e2e8f0;
+  --territorial-border-subtle: #f1f5f9;
+  --territorial-text-primary: #0f172a;
+  --territorial-text-secondary: #475569;
+  --territorial-text-muted: #94a3b8;
+  --territorial-green: #16a34a;
+  --territorial-green-hover: #15803d;
+  --territorial-blue: #3b82f6;
+  --territorial-radius: 12px;
+  --territorial-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --territorial-shadow-hover: 0 4px 18px rgba(15, 23, 42, 0.09);
 }
 
 .decoupage-content {
@@ -68,25 +26,268 @@
   overflow-x: hidden;
 }
 
-@media (max-width: 720px) {
-  .topbar {
-    padding: 8px 12px;
+// Shared module styles stay scoped to the territorial shell, not app-wide styles.scss.
+:host ::ng-deep .decoupage-content {
+  .page-container {
+    padding: var(--territorial-page-gutter) var(--territorial-page-gutter) 32px;
   }
 
-  .topbar-nav {
-    justify-content: flex-start;
-    min-height: 56px;
-    border-radius: 14px;
+  .card,
+  .table-card {
+    background: var(--territorial-card);
+    border: 1px solid var(--territorial-border);
+    border-radius: var(--territorial-radius);
+    box-shadow: var(--territorial-shadow);
+    transition: box-shadow 0.18s ease;
   }
 
-  .nav-item {
-    min-height: 46px;
-    padding: 0 14px;
+  .card {
+    margin-bottom: 0;
+  }
+
+  .card:hover,
+  .table-card:hover {
+    box-shadow: var(--territorial-shadow-hover);
+    transform: none;
+  }
+
+  .table-card {
+    overflow-x: auto;
+  }
+
+  .stat-cards {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    padding: 16px;
+    border: 1px solid var(--territorial-border);
+    border-radius: var(--territorial-radius);
+    background: var(--territorial-card);
+    box-shadow: var(--territorial-shadow);
+
+    .stat-value {
+      color: var(--territorial-text-primary);
+      font-size: 25px;
+    }
+
+    .stat-label {
+      color: var(--territorial-text-muted);
+      font-size: 12px;
+    }
+
+    &.tone-created .stat-value {
+      color: var(--territorial-green);
+    }
+
+    &.tone-warning .stat-value {
+      color: #b45309;
+    }
+
+    &.tone-error .stat-value {
+      color: #dc2626;
+    }
+  }
+
+  .row-badge {
+    padding: 4px 10px;
+    font-size: 11px;
+    letter-spacing: 0.01em;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    thead th {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--territorial-border);
+      background: #f8fafc;
+      color: var(--territorial-text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--territorial-border-subtle);
+      color: var(--territorial-text-secondary);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+  }
+
+  .btn {
+    min-height: 40px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+    &:focus-visible {
+      outline: 2px solid var(--territorial-blue);
+      outline-offset: 2px;
+    }
+  }
+
+  .btn-primary {
+    border-color: var(--territorial-green);
+    background: var(--territorial-green);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      border-color: var(--territorial-green-hover);
+      background: var(--territorial-green-hover);
+      box-shadow: 0 3px 10px rgba(22, 163, 74, 0.2);
+      transform: translateY(-1px);
+    }
+  }
+
+  .btn-secondary {
+    border: 1px solid var(--territorial-border);
+    background: #fff;
+    color: var(--territorial-text-secondary);
+
+    &:hover:not(:disabled) {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+      color: var(--territorial-text-primary);
+      transform: none;
+    }
+  }
+
+  .btn-danger {
+    background: #dc2626;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+  }
+
+  .icon-btn {
+    min-width: 38px;
+    min-height: 38px;
+    border: 1px solid var(--territorial-border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--territorial-text-secondary);
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: var(--territorial-blue);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--territorial-blue);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  .alert {
+    padding: 12px 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .form-field {
+    label {
+      color: var(--territorial-text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    input,
+    select,
+    textarea {
+      min-height: 44px;
+      padding: 10px 14px;
+      border: 1px solid var(--territorial-border);
+      border-radius: 8px;
+      color: var(--territorial-text-primary);
+      font-size: 13.5px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+      &:focus {
+        border-color: var(--territorial-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+      }
+
+      &:disabled {
+        background: #f8fafc;
+        color: var(--territorial-text-muted);
+      }
+    }
+
+    .hint {
+      color: var(--territorial-text-muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  }
+
+  .empty-state {
+    min-height: 240px;
+    padding: 48px 24px;
+    border: 1px dashed var(--territorial-border);
+    border-radius: var(--territorial-radius);
+    background: #fff;
+    color: var(--territorial-text-muted);
+
+    h3 {
+      color: var(--territorial-text-primary);
+      font-size: 17px;
+    }
+
+    p {
+      max-width: 420px;
+      color: var(--territorial-text-secondary);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+  }
+
+  .loading-state {
+    padding: 32px 20px;
+    border: 1px solid var(--territorial-border);
+    border-radius: var(--territorial-radius);
+    background: #fff;
+    color: var(--territorial-text-secondary);
     font-size: 13px;
   }
+}
 
+@media (max-width: 768px) {
   .decoupage-content {
     min-height: calc(100vh - 72px);
+  }
+}
+
+@media (max-width: 480px) {
+  :host ::ng-deep .decoupage-content .page-container {
+    padding-bottom: 24px;
   }
 }
 

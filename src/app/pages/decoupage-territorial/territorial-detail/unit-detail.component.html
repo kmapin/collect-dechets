@@ -1,7 +1,9 @@
 <div class="page-container">
   @if (loading()) {
+    <app-territorial-navigation class="fallback-navigation" />
     <div class="loading-state">Chargement…</div>
   } @else if (!unit()) {
+    <app-territorial-navigation class="fallback-navigation" />
     <div class="empty-state">
       <h3>{{ actionError() ? 'Erreur de chargement' : 'Unité introuvable' }}</h3>
       <p>{{ actionError() || "Cette unité territoriale n'existe pas ou a été supprimée." }}</p>

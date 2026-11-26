@@ -3,12 +3,15 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { BehaviorSubject } from 'rxjs';
 import { TerritorialUnit } from '../models/models';
 import { TerritoryService } from '../services/territory.service';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { UnitDetailComponent } from './unit-detail.component';
 
 describe('UnitDetailComponent', () => {
   let fixture: ComponentFixture<UnitDetailComponent>;
   let routeIds: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let getApiUnit: jasmine.Spy;
+  let deleteApiUnit: jasmine.Spy;
+  let confirm: jasmine.Spy;
 
   const makeUnit = (id: string, name: string): TerritorialUnit => ({
     id,
@@ -33,16 +36,20 @@ describe('UnitDetailComponent', () => {
     getApiUnit = jasmine.createSpy('getApiUnit').and.callFake((id: string) =>
       makeUnit(id, id === 'city-1' ? 'Ouagadougou' : 'Bobo-Dioulasso'),
     );
+    deleteApiUnit = jasmine.createSpy('deleteApiUnit').and.resolveTo(undefined);
+    confirm = jasmine.createSpy('confirm').and.resolveTo(false);
 
     await TestBed.configureTestingModule({
       imports: [UnitDetailComponent],
       providers: [
         provideRouter([]),
         { provide: ActivatedRoute, useValue: { paramMap: routeIds.asObservable() } },
+        { provide: ConfirmDialogService, useValue: { confirm } },
         {
           provide: TerritoryService,
           useValue: {
             loadApiUnits: jasmine.createSpy().and.resolveTo([]),
+            deleteApiUnit,
             getApiUnit,
             getApiAncestors: () => [],
             getApiChildren: () => [],
@@ -69,6 +76,17 @@ describe('UnitDetailComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Bobo-Dioulasso');
     expect(fixture.nativeElement.querySelector('.unit-location-map')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-status-pill')).toBeNull();
+  });
+
+  it('uses the shared confirmation dialog before deleting a unit', async () => {
+    await fixture.componentInstance.deleteUnit();
+
+    expect(confirm).toHaveBeenCalledWith(jasmine.objectContaining({
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler',
+    }));
+    expect(deleteApiUnit).not.toHaveBeenCalled();
   });
 
   it('shows the location map when both coordinates are available', async () => {

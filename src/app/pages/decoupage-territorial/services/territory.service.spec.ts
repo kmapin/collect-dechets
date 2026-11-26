@@ -37,7 +37,7 @@ describe('TerritoryService API hierarchy', () => {
     expect(service.getApiUnit('city-1')?.metadata['country_name']).toBe('Burkina Faso');
     expect(service.getApiUnit('sector-1')?.metadata['country_name']).toBe('Burkina Faso');
     expect(service.getApiUnit('quarter-1')?.metadata['country_name']).toBe('Burkina Faso');
-    expect(service.getApiUnit('quarter-1')?.active).toBeUndefined();
+    expect('active' in service.getApiUnit('quarter-1')!).toBeFalse();
     expect(service.getApiParentTypes('NEIGHBORHOOD')).toEqual([
       'CITY',
       'ARRONDISSEMENT',

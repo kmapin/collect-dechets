@@ -9,41 +9,42 @@ import { Component, Input } from '@angular/core';
       .badge {
         display: inline-flex;
         align-items: center;
-        padding: 3px 10px;
+        padding: 4px 10px;
         border-radius: 999px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
+        line-height: 1.3;
         white-space: nowrap;
       }
       .badge-country {
-        background: var(--color-primary-100);
-        color: var(--color-primary-700);
+        background: #eff6ff;
+        color: #1d4ed8;
       }
       .badge-region {
-        background: #e3eefc;
-        color: #1c4e8a;
+        background: #eef2ff;
+        color: #4338ca;
       }
       .badge-province {
-        background: #eaf3ec;
-        color: #2a6b3f;
+        background: #ecfdf5;
+        color: #047857;
       }
       .badge-city {
-        background: var(--color-accent-100);
-        color: var(--color-accent-600);
+        background: #ecfdf5;
+        color: #15803d;
       }
       .badge-arrondissement {
-        background: #fce8e8;
-        color: #a02828;
+        background: #fff7ed;
+        color: #c2410c;
       }
       .badge-sector,
       .badge-village,
       .badge-neighborhood {
-        background: var(--color-neutral-100);
-        color: var(--color-neutral-600);
+        background: #f1f5f9;
+        color: #475569;
       }
       .badge-custom {
-        background: #f0e9f7;
-        color: #6b3a8a;
+        background: #faf5ff;
+        color: #7e22ce;
       }
     `,
   ],

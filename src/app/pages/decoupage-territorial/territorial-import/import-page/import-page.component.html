@@ -1,28 +1,27 @@
 <div class="page-container">
   <app-page-header
     title="Importer des données territoriales"
-    [subtitle]="'Profil : ' + profile.country_name + ' — l\'analyse précède toujours la confirmation, aucune donnée n\'est modifiée avant validation.'"
+    subtitle="Analysez le CSV avant confirmation. Les créations seront envoyées au backend et vérifiées après rechargement."
     [backLink]="'/territorial/units'"
   />
 
   <div class="steps">
-    <div class="step done"><span class="step-num">1</span> Télécharger le modèle</div>
+    <div class="step done"><span class="step-num">1</span> Télécharger le modèle CSV</div>
     <div class="step done"><span class="step-num">2</span> Remplir le fichier</div>
     <div class="step current"><span class="step-num">3</span> Téléverser et analyser</div>
-    <div class="step"><span class="step-num">4</span> Prévisualiser</div>
-    <div class="step"><span class="step-num">5</span> Confirmer</div>
+    <div class="step"><span class="step-num">4</span> Prévisualiser et confirmer</div>
   </div>
 
   <div class="import-grid">
     <div class="card template-card">
-      <h3><app-icon [icon]="icons.FileSpreadsheet" [size]="18" /> Modèle Excel</h3>
+      <h3><app-icon [icon]="icons.FileSpreadsheet" [size]="18" /> Modèle CSV</h3>
       <p class="muted">
-        Téléchargez le modèle avec les colonnes Région, Province, Ville, Arrondissement,
-        Secteur, Village, Quartier et les consignes de remplissage.
+        Le fichier utilise les colonnes Pays, Ville, Arrondissement, Secteur, Quartier,
+        Latitude et Longitude. Pays et Ville sont obligatoires; les niveaux inférieurs sont facultatifs.
       </p>
       <button class="btn btn-secondary" (click)="downloadTemplate()">
         <app-icon [icon]="icons.Download" [size]="16" />
-        Télécharger le modèle
+        Télécharger le modèle CSV
       </button>
     </div>
 
@@ -41,10 +40,10 @@
           Glissez votre fichier ici ou
           <label class="file-label">
             parcourez vos fichiers
-            <input type="file" accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" hidden />
+            <input type="file" accept=".csv,text/csv" (change)="onFileSelected($event)" hidden />
           </label>
         </p>
-        <span class="muted">Formats acceptés : .xlsx, .csv — 10 Mo max</span>
+        <span class="muted">Format accepté : CSV UTF-8 — 10 Mo max</span>
       </div>
 
       @if (selectedFile(); as f) {

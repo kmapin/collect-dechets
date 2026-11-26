@@ -46,6 +46,7 @@ describe('facture.mapper', () => {
         facture: {
           idFacture: '64f1a2b3c4d5e6f7a8b9c0d9',
           idClient: '64f1a2b3c4d5e6f7a8b9c0d1',
+          contratId: '64f1a2b3c4d5e6f7a8b9c0c1',
           periode: { mois: 7, annee: 2026 },
           montant: 5000,
           statut: 'Payée',
@@ -60,11 +61,14 @@ describe('facture.mapper', () => {
         facture: {
           idFacture: '64f1a2b3c4d5e6f7a8b9c0d9',
           idClient: '64f1a2b3c4d5e6f7a8b9c0d1',
+          contratId: '64f1a2b3c4d5e6f7a8b9c0c1',
           periode: { mois: 7, annee: 2026 },
           montant: 5000,
           statut: FactureStatut.PAYEE,
           dateGeneration: '2026-07-01T00:00:00.000Z',
           datePaiement: '2026-07-05T00:00:00.000Z',
+          periodeDebut: undefined,
+          periodeFin: undefined,
         },
         statut: FactureStatut.PAYEE,
         moisRetard: 0,
@@ -88,12 +92,21 @@ describe('facture.mapper', () => {
 
   describe('mapLigneReleveDto', () => {
     it('mappe une ligne réelle GET /finance/factures/releve/:idClient, payée', () => {
-      const dto = { factureLe: '2026-06-01T00:00:00.000Z', payeLe: '2026-06-03T00:00:00.000Z', statut: 'Payée', montant: 5000 };
+      const dto = {
+        factureLe: '2026-06-01T00:00:00.000Z',
+        payeLe: '2026-06-03T00:00:00.000Z',
+        statut: 'Payée',
+        montant: 5000,
+        periodeDebut: '2026-06-01T00:00:00.000Z',
+        periodeFin: '2026-06-30T00:00:00.000Z',
+      };
       expect(mapLigneReleveDto(dto)).toEqual({
         factureLe: '2026-06-01T00:00:00.000Z',
         payeLe: '2026-06-03T00:00:00.000Z',
         statut: FactureStatut.PAYEE,
         montant: 5000,
+        periodeDebut: '2026-06-01T00:00:00.000Z',
+        periodeFin: '2026-06-30T00:00:00.000Z',
       });
     });
 

@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
-import { TerritorialProfile, TerritorialUnit, ImportRow, ImportStatistics, RowStatus, RowSeverity } from '../models/models';
-import { normalizeName, cleanCell, isBlank, TEMPLATE_KEYS } from './import-utils';
-import { TerritoryService } from './territory.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { Country, City, Arrondissement, Sector, Quartier } from '../../../models/countries-org.model';
+import { ImportRow, ImportStatistics, RowSeverity, RowStatus, TerritorialUnit } from '../models/models';
+import { normalizeName } from './territorial-utils';
+import { TerritoryHttpService } from '../../../services/territory-http.service';
+import { API_UNIT_TYPE_CODES, TerritoryService } from './territory.service';
 
 export interface ParsedRow {
   rowNumber: number;
@@ -9,447 +13,751 @@ export interface ParsedRow {
   raw: Record<string, string>;
 }
 
+export type ImportPreviewRow = Omit<ImportRow, 'id' | 'import_id' | 'created_at'>;
+type ImportUnitType = typeof API_UNIT_TYPE_CODES[number];
+
+export interface ImportNode {
+  key: string;
+  typeCode: ImportUnitType;
+  name: string;
+  parentType: ImportUnitType | null;
+  parentKey: string | null;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface ImportRecord {
+  rowNumber: number;
+  path: string;
+  nodes: ImportNode[];
+}
+
 export interface AnalysisResult {
-  rows: Omit<ImportRow, 'id' | 'import_id' | 'created_at'>[];
+  rows: ImportPreviewRow[];
+  records: ImportRecord[];
   statistics: ImportStatistics;
 }
 
-export const TEMPLATE_COLUMNS = ['Région', 'Province', 'Ville', 'Arrondissement', 'Secteur', 'Village', 'Quartier'];
+export interface ImportExecutionResult {
+  created: number;
+  reused: number;
+  errors: number;
+  retryableErrors: number;
+  duplicates: number;
+  verified: boolean;
+  verificationError: string | null;
+  rows: ImportPreviewRow[];
+}
 
-interface MockImport {
+interface ImportAttempt {
+  id: string | null;
+  retryAllowed: boolean;
+}
+
+export interface ImportDraft {
   id: string;
-  file_name: string;
-  country_code: string;
-  status: string;
+  fileName: string;
+  rows: ImportPreviewRow[];
+  records: ImportRecord[];
   statistics: ImportStatistics;
-  idempotency_key: string;
-  uploaded_by: string;
-  created_at: string;
-  confirmed_at: string | null;
-  completed_at: string | null;
-  rows: ImportRow[];
+  attemptedNodes?: Record<string, ImportAttempt>;
+  result?: ImportExecutionResult;
 }
+
+interface CsvRecord {
+  lineNumber: number;
+  cells: string[];
+}
+
+const CSV_COLUMNS = ['Pays', 'Ville', 'Arrondissement', 'Secteur', 'Quartier', 'Latitude', 'Longitude'];
+const COLUMN_INDEX = {
+  country: 0,
+  city: 1,
+  arrondissement: 2,
+  sector: 3,
+  neighborhood: 4,
+  latitude: 5,
+  longitude: 6,
+} as const;
+const ALLOWED_PARENT_TYPES: Record<ImportUnitType, readonly ImportUnitType[]> = {
+  COUNTRY: [],
+  CITY: ['COUNTRY'],
+  ARRONDISSEMENT: ['CITY'],
+  SECTOR: ['CITY', 'ARRONDISSEMENT'],
+  NEIGHBORHOOD: ['CITY', 'ARRONDISSEMENT', 'SECTOR'],
+};
+const DRAFT_STORAGE_PREFIX = 'territorial-import-draft:';
 
 @Injectable({ providedIn: 'root' })
 export class ImportParserService {
-  private imports: MockImport[] = [];
-
-  constructor(private territory: TerritoryService) {}
+  constructor(
+    private readonly api: TerritoryHttpService,
+    private readonly territory: TerritoryService,
+  ) {}
 
   async parseFile(file: File): Promise<ParsedRow[]> {
-    const ext = file.name.toLowerCase().split('.').pop() ?? '';
-    if (!['csv', 'xlsx', 'xls'].includes(ext)) {
-      throw new Error('IMPORT_FILE_INVALID: seuls les fichiers .xlsx et .csv sont acceptés.');
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      throw new Error('IMPORT_FILE_INVALID: seuls les fichiers CSV (.csv) sont acceptés.');
     }
-    if (ext === 'csv') return this.parseCsv(file);
-    return this.parseDelimited(file.name, await file.text(), ',');
-  }
 
-  private parseCsv(file: File): Promise<ParsedRow[]> {
-    return file.text().then((text) => {
-      const delim = this.sniffDelimiter(text);
-      return this.parseDelimited(file.name, text, delim);
-    });
-  }
+    let text: string;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer());
+    } catch {
+      throw new Error('IMPORT_FILE_ENCODING: le fichier doit être encodé en UTF-8.');
+    }
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+    if (!text.trim()) throw new Error('IMPORT_FILE_INVALID: le fichier est vide.');
 
-  private sniffDelimiter(text: string): string {
-    const firstLine = text.split(/\r?\n/)[0] ?? '';
-    const semi = (firstLine.match(/;/g) ?? []).length;
-    const comma = (firstLine.match(/,/g) ?? []).length;
-    const tab = (firstLine.match(/\t/g) ?? []).length;
-    if (tab > semi && tab > comma) return '\t';
-    return semi >= comma ? ';' : ',';
-  }
+    const delimiter = this.sniffDelimiter(text);
+    const records = this.parseCsvText(text, delimiter);
+    const header = records.shift();
+    if (!header) throw new Error('IMPORT_FILE_INVALID: le fichier est vide.');
 
-  private parseDelimited(fileName: string, text: string, delimiter: string): ParsedRow[] {
-    const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
-    if (lines.length === 0) throw new Error('IMPORT_FILE_INVALID: le fichier est vide.');
-
-    const header = this.splitLine(lines[0], delimiter).map((h) => cleanCell(h).toLowerCase());
-    const colIndex: Record<string, number> = {};
-    TEMPLATE_COLUMNS.forEach((col, i) => {
-      const idx = header.indexOf(col.toLowerCase());
-      if (idx >= 0) colIndex[col] = idx;
-    });
-    for (const required of ['Région', 'Province', 'Ville']) {
-      if (!(required in colIndex)) {
+    const normalizedHeaders = header.cells.map((cell) => normalizeName(cell.trim()));
+    const columnIndexes = new Map<string, number>();
+    for (const column of CSV_COLUMNS) {
+      const index = normalizedHeaders.indexOf(normalizeName(column));
+      if (index >= 0) columnIndexes.set(column, index);
+    }
+    for (const required of ['Pays', 'Ville']) {
+      if (!columnIndexes.has(required)) {
         throw new Error(`IMPORT_COLUMN_MISSING: colonne « ${required} » manquante.`);
       }
     }
 
-    const rows: ParsedRow[] = [];
-    let rowNumber = 1;
-    for (let i = 1; i < lines.length; i++) {
-      const cells = this.splitLine(lines[i], delimiter);
-      const values = TEMPLATE_COLUMNS.map((col) => {
-        const idx = colIndex[col];
-        return idx !== undefined ? cleanCell(cells[idx] ?? '') : '';
-      });
-      if (values.every((v) => isBlank(v))) continue;
-      rows.push({ rowNumber, values, raw: {} });
-      rowNumber++;
+    const rows = records
+      .filter((record) => record.cells.some((cell) => cell.trim() !== ''))
+      .map((record) => ({
+        rowNumber: record.lineNumber,
+        values: CSV_COLUMNS.map((column) => {
+          const index = columnIndexes.get(column);
+          return index === undefined ? '' : (record.cells[index] ?? '').trim();
+        }),
+        raw: {},
+      }));
+    if (rows.length === 0) {
+      throw new Error('IMPORT_FILE_INVALID: le fichier ne contient aucune ligne de données.');
     }
     return rows;
   }
 
-  private splitLine(line: string, delimiter: string): string[] {
-    const out: string[] = [];
-    let cur = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') {
-        if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
-        else inQuotes = !inQuotes;
-      } else if (c === delimiter && !inQuotes) {
-        out.push(cur);
-        cur = '';
-      } else {
-        cur += c;
-      }
-    }
-    out.push(cur);
-    return out;
-  }
-
-  // ===== Analyse =====
-
-  analyze(parsedRows: ParsedRow[], profile: TerritorialProfile, existingUnits: TerritorialUnit[]): AnalysisResult {
-    const resultRows: Omit<ImportRow, 'id' | 'import_id' | 'created_at'>[] = [];
-    const stats: ImportStatistics = { totalRows: parsedRows.length, created: 0, reused: 0, updated: 0, duplicates: 0, errors: 0, reactivated: 0 };
-
-    const keyOf = (parentId: string | null, typeCode: string, normName: string) => `${parentId ?? 'ROOT'}|${typeCode}|${normName}`;
-    const existingMap = new Map<string, TerritorialUnit>();
-    for (const u of existingUnits) existingMap.set(keyOf(u.parent_id, u.type_code, u.normalized_name), u);
-    const inFileMap = new Map<string, 'create' | 'existing'>();
+  analyze(parsedRows: ParsedRow[], existingUnits: TerritorialUnit[]): AnalysisResult {
+    const existing = this.indexUnits(existingUnits);
+    const planned = new Set<string>();
+    const reusedInPreview = new Set<string>();
+    const seenPaths = new Set<string>();
+    const rows: ImportPreviewRow[] = [];
+    const records: ImportRecord[] = [];
+    const statistics: ImportStatistics = {
+      totalRows: parsedRows.length,
+      created: 0,
+      reused: 0,
+      duplicates: 0,
+      errors: 0,
+    };
 
     for (const parsed of parsedRows) {
-      const parts = this.buildPathParts(parsed);
-      if (parts.length === 0) {
-        resultRows.push(this.errRow(parsed.rowNumber, 'Ligne vide : au moins Région, Province et Ville sont obligatoires.'));
-        stats.errors++;
-        continue;
-      }
-      if (isBlank(parsed.values[2])) {
-        resultRows.push(this.errRow(parsed.rowNumber, 'La colonne « Ville » est obligatoire et ne peut pas être vide.'));
-        stats.errors++;
-        continue;
-      }
+      const country = parsed.values[COLUMN_INDEX.country]?.trim() ?? '';
+      const city = parsed.values[COLUMN_INDEX.city]?.trim() ?? '';
+      const arrondissement = parsed.values[COLUMN_INDEX.arrondissement]?.trim() ?? '';
+      const sector = parsed.values[COLUMN_INDEX.sector]?.trim() ?? '';
+      const neighborhood = parsed.values[COLUMN_INDEX.neighborhood]?.trim() ?? '';
+      const latitudeText = parsed.values[COLUMN_INDEX.latitude]?.trim() ?? '';
+      const longitudeText = parsed.values[COLUMN_INDEX.longitude]?.trim() ?? '';
 
-      const validation = this.validateLine(parts, profile);
-      if (!validation.ok) {
-        resultRows.push({
-          row_number: parsed.rowNumber,
-          path: parts.map((p) => p.name).join(' / '),
-          type_code: parts[parts.length - 1].typeCode,
-          name: parts[parts.length - 1].name,
-          status: 'ERROR',
-          parent_path: parts.slice(0, -1).map((p) => p.name).join(' / ') || null,
-          message: validation.message,
-          severity: 'error',
-        });
-        stats.errors++;
+      const invalid = this.validateRow({
+        country,
+        city,
+        arrondissement,
+        sector,
+        neighborhood,
+        latitudeText,
+        longitudeText,
+      });
+      if (invalid) {
+        rows.push(this.errorRow(parsed.rowNumber, invalid));
+        statistics.errors++;
         continue;
       }
 
-      let parentId: string | null = null;
-      let leafStatus: RowStatus = 'CREATE';
-      let leafMessage = '';
-      let leafSeverity: RowSeverity = 'ok';
+      const coordinates = latitudeText && longitudeText
+        ? { latitude: Number(latitudeText), longitude: Number(longitudeText) }
+        : undefined;
+      const nodes = this.buildNodes({
+        country,
+        city,
+        arrondissement,
+        sector,
+        neighborhood,
+        coordinates,
+      });
+      const relationError = this.validateRelations(nodes);
+      if (relationError) {
+        rows.push(this.errorRow(parsed.rowNumber, relationError, nodes));
+        statistics.errors++;
+        continue;
+      }
 
-      for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        const isLeaf = i === parts.length - 1;
-        const key = keyOf(parentId, part.typeCode, part.normName);
-        const existing = existingMap.get(key);
-        const inFile = inFileMap.get(key);
+      const leaf = nodes[nodes.length - 1];
+      const duplicateInFile = seenPaths.has(leaf.key);
+      const leafWasKnown = existing.has(leaf.key) || planned.has(leaf.key);
+      if (leaf.typeCode === 'NEIGHBORHOOD' && !coordinates && !leafWasKnown) {
+        rows.push(this.errorRow(parsed.rowNumber, 'Un quartier à créer doit avoir une latitude et une longitude.', nodes));
+        statistics.errors++;
+        continue;
+      }
+      seenPaths.add(leaf.key);
+      if (duplicateInFile) statistics.duplicates++;
 
-        if (existing) {
-          if (isLeaf) {
-            if (inFile) {
-              leafStatus = 'DUPLICATE_IN_FILE';
-              leafMessage = 'Répétition dans le fichier — l\'unité existante sera réutilisée.';
-              leafSeverity = 'warning';
-              stats.duplicates++;
-            } else if (!existing.active) {
-              leafStatus = 'REACTIVATE';
-              leafMessage = 'Unité inactive retrouvée — réactivation proposée.';
-              leafSeverity = 'warning';
-              stats.reactivated++;
-            } else {
-              leafStatus = 'REUSE';
-              leafMessage = 'Existe déjà — l\'unité sera réutilisée (aucun renommage).';
-              leafSeverity = 'ok';
-              stats.reused++;
-            }
-          }
-          inFileMap.set(key, 'existing');
-          parentId = existing.id;
-        } else if (inFile) {
-          if (isLeaf) {
-            leafStatus = 'DUPLICATE_IN_FILE';
-            leafMessage = 'Répétition dans le fichier — une seule unité sera créée.';
-            leafSeverity = 'warning';
-            stats.duplicates++;
-          }
-        } else {
-          if (isLeaf) {
-            leafStatus = 'CREATE';
-            leafMessage = 'À créer';
-            leafSeverity = 'ok';
-            stats.created++;
-          }
-          inFileMap.set(key, 'create');
+      for (const node of nodes) {
+        if (existing.has(node.key)) {
+          reusedInPreview.add(node.key);
+        } else if (!planned.has(node.key)) {
+          planned.add(node.key);
+          statistics.created++;
         }
       }
 
-      resultRows.push({
+      records.push({
+        rowNumber: parsed.rowNumber,
+        path: nodes.map((node) => node.name).join(' / '),
+        nodes,
+      });
+      rows.push({
         row_number: parsed.rowNumber,
-        path: parts.map((p) => p.name).join(' / '),
-        type_code: parts[parts.length - 1].typeCode,
-        name: parts[parts.length - 1].name,
-        status: leafStatus,
-        parent_path: parts.slice(0, -1).map((p) => p.name).join(' / ') || null,
-        message: leafMessage,
-        severity: leafSeverity,
+        path: nodes.map((node) => node.name).join(' / '),
+        type_code: leaf.typeCode,
+        name: leaf.name,
+        status: duplicateInFile ? 'DUPLICATE_IN_FILE' : existing.has(leaf.key) ? 'REUSE' : 'CREATE',
+        parent_path: nodes.slice(0, -1).map((node) => node.name).join(' / ') || null,
+        message: duplicateInFile
+          ? 'Chemin répété dans le fichier; la même unité ne sera créée qu’une fois.'
+          : existing.has(leaf.key)
+            ? 'Unité existante; elle sera conservée sans modification.'
+            : 'À créer dans le référentiel via l’API.',
+        severity: duplicateInFile ? 'warning' : 'ok',
       });
     }
 
-    return { rows: resultRows, statistics: stats };
+    statistics.reused = reusedInPreview.size;
+    return { rows, records, statistics };
   }
 
-  private errRow(rowNumber: number, message: string) {
+  saveDraft(draft: ImportDraft): void {
+    sessionStorage.setItem(`${DRAFT_STORAGE_PREFIX}${draft.id}`, JSON.stringify(draft));
+  }
+
+  getDraft(id: string): ImportDraft | null {
+    const stored = sessionStorage.getItem(`${DRAFT_STORAGE_PREFIX}${id}`);
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored) as ImportDraft;
+    } catch {
+      sessionStorage.removeItem(`${DRAFT_STORAGE_PREFIX}${id}`);
+      return null;
+    }
+  }
+
+  removeDraft(id: string): void {
+    sessionStorage.removeItem(`${DRAFT_STORAGE_PREFIX}${id}`);
+  }
+
+  async confirmImport(draftId: string): Promise<ImportExecutionResult> {
+    const draft = this.getDraft(draftId);
+    if (!draft) throw new Error('L’aperçu de cet import a expiré. Veuillez sélectionner et analyser le CSV à nouveau.');
+    if (draft.result?.verified && draft.result.retryableErrors === 0) return draft.result;
+    if (draft.records.length === 0) throw new Error('Aucune ligne valide à envoyer à l’API.');
+
+    this.restoreAttemptState(draft);
+    await this.territory.loadApiUnits();
+    const initialIndex = this.indexUnits(this.territory.getApiUnits());
+    const createdIds = new Map<string, string>();
+    const failedKeys = new Map<string, string>();
+    const reusedKeys = new Set<string>();
+
+    for (const record of draft.records) {
+      let parentId: string | null = null;
+      for (const node of record.nodes) {
+        const existing = initialIndex.get(node.key);
+        if (existing) {
+          const previousAttempt = draft.attemptedNodes?.[node.key];
+          if (previousAttempt?.id === existing.id) createdIds.set(node.key, existing.id);
+          else if (previousAttempt) reusedKeys.add(node.key);
+          parentId = existing.id;
+          continue;
+        }
+        const createdId = createdIds.get(node.key);
+        if (createdId) {
+          parentId = createdId;
+          continue;
+        }
+        const previousError = failedKeys.get(node.key);
+        if (previousError) {
+          failedKeys.set(`row:${record.rowNumber}`, `Dépendance non créée : ${previousError}`);
+          break;
+        }
+        const previousAttempt = draft.attemptedNodes?.[node.key];
+        if (previousAttempt && !previousAttempt.retryAllowed) {
+          const message = 'Une tentative précédente n’a pas pu être confirmée. Aucune nouvelle écriture ne sera envoyée pour éviter un doublon; relancez la vérification du référentiel.';
+          failedKeys.set(node.key, message);
+          failedKeys.set(`row:${record.rowNumber}`, message);
+          break;
+        }
+
+        const attempt: ImportAttempt = { id: null, retryAllowed: false };
+        draft.attemptedNodes ??= {};
+        draft.attemptedNodes[node.key] = attempt;
+        this.saveDraft(draft);
+        try {
+          const created = await this.createNode(node, parentId);
+          if (!created.id) throw new Error('L’API n’a pas retourné l’identifiant de l’unité créée.');
+          createdIds.set(node.key, created.id);
+          attempt.id = created.id;
+          parentId = created.id;
+        } catch (error: unknown) {
+          const message = this.apiErrorMessage(error);
+          attempt.retryAllowed = this.isDefinitiveApiRejection(error);
+          failedKeys.set(node.key, message);
+          failedKeys.set(`row:${record.rowNumber}`, message);
+          this.saveDraft(draft);
+          break;
+        }
+        this.saveDraft(draft);
+      }
+    }
+
+    let verifiedUnits: TerritorialUnit[];
+    try {
+      verifiedUnits = await this.territory.loadApiUnits();
+    } catch (error: unknown) {
+      const message = this.apiErrorMessage(error);
+      const rows = this.applyExecutionErrors(
+        draft.rows,
+        draft.records,
+        new Map(draft.records.map((record) => [
+          `row:${record.rowNumber}`,
+          failedKeys.get(`row:${record.rowNumber}`) ?? `Écriture envoyée, mais impossible de vérifier sa présence dans le référentiel : ${message}`,
+        ])),
+      );
+      const result: ImportExecutionResult = {
+        created: 0,
+        reused: 0,
+        errors: rows.filter((row) => row.severity === 'error').length,
+        retryableErrors: draft.records.length,
+        duplicates: draft.statistics.duplicates,
+        verified: false,
+        verificationError: `Rechargement du référentiel impossible : ${message}`,
+        rows,
+      };
+      draft.result = result;
+      this.saveDraft(draft);
+      return result;
+    }
+
+    const finalIndex = this.indexUnits(verifiedUnits);
+    const persistedCreated = new Set<string>();
+    const rowErrors = new Map<string, string>();
+    for (const record of draft.records) {
+      for (const node of record.nodes) {
+        if (initialIndex.has(node.key)) reusedKeys.add(node.key);
+      }
+    }
+
+    for (const [key, id] of createdIds) {
+      const unit = finalIndex.get(key);
+      if (unit?.id === id) persistedCreated.add(key);
+      else failedKeys.set(key, 'L’unité créée n’a pas été retrouvée après rechargement depuis l’API.');
+    }
+    for (const key of failedKeys.keys()) {
+      if (key.startsWith('row:')) continue;
+      if (finalIndex.has(key)) {
+        reusedKeys.add(key);
+      }
+    }
+
+    for (const record of draft.records) {
+      const recordedError = failedKeys.get(`row:${record.rowNumber}`);
+      if (recordedError) {
+        const unresolved = record.nodes.find((node) => !finalIndex.has(node.key));
+        if (unresolved) rowErrors.set(`row:${record.rowNumber}`, recordedError);
+      }
+      const missing = record.nodes.find((node) => !finalIndex.has(node.key));
+      if (missing && !rowErrors.has(`row:${record.rowNumber}`)) {
+        rowErrors.set(`row:${record.rowNumber}`, failedKeys.get(missing.key)
+          ?? 'Une unité du chemin n’a pas été confirmée par le référentiel après rechargement.');
+      }
+    }
+
+    const rows = this.applyExecutionStatuses(
+      draft.rows,
+      draft.records,
+      rowErrors,
+      initialIndex,
+      finalIndex,
+    );
+    const result: ImportExecutionResult = {
+      created: persistedCreated.size,
+      reused: reusedKeys.size,
+      errors: rows.filter((row) => row.severity === 'error').length,
+      retryableErrors: rowErrors.size,
+      duplicates: draft.statistics.duplicates,
+      verified: true,
+      verificationError: null,
+      rows,
+    };
+    draft.result = result;
+    this.saveDraft(draft);
+    return result;
+  }
+
+  async generateTemplate(): Promise<Blob> {
+    return new Blob(['\ufeff' + CSV_COLUMNS.join(';') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+  }
+
+  async generateReport(rows: ImportPreviewRow[], stats: ImportStatistics, fileName: string): Promise<Blob> {
+    const output = [
+      ['Fichier', fileName],
+      ['Lignes analysées', stats.totalRows],
+      ['Unités créées et vérifiées', stats.created],
+      ['Unités réutilisées', stats.reused],
+      ['Doublons dans le fichier', stats.duplicates],
+      ['Lignes en erreur', stats.errors],
+      [],
+      ['Ligne', 'Chemin', 'Type', 'Nom', 'Statut', 'Sévérité', 'Message'],
+      ...rows.map((row) => [
+        row.row_number,
+        row.path ?? '',
+        row.type_code ?? '',
+        row.name ?? '',
+        row.status ?? '',
+        row.severity,
+        row.message ?? '',
+      ]),
+    ].map((line) => line.map((value) => this.escapeCsv(String(value))).join(';'));
+    return new Blob(['\ufeff' + output.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  }
+
+  downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  }
+
+  private validateRow(input: {
+    country: string;
+    city: string;
+    arrondissement: string;
+    sector: string;
+    neighborhood: string;
+    latitudeText: string;
+    longitudeText: string;
+  }): string | null {
+    if (!input.country) return 'La colonne « Pays » est obligatoire.';
+    if (!input.city) {
+      if (input.arrondissement || input.sector || input.neighborhood) {
+        return 'Relation territoriale invalide : une subdivision doit être rattachée à une Ville.';
+      }
+      return 'La colonne « Ville » est obligatoire.';
+    }
+    if ((input.latitudeText && !input.longitudeText) || (!input.latitudeText && input.longitudeText)) {
+      return 'Latitude et longitude doivent être renseignées ensemble.';
+    }
+    if ((input.latitudeText || input.longitudeText) && !input.neighborhood) {
+      return 'Les coordonnées du fichier s’appliquent à un Quartier; renseignez aussi la colonne « Quartier ».';
+    }
+    if (input.latitudeText && input.longitudeText) {
+      const latitude = Number(input.latitudeText);
+      const longitude = Number(input.longitudeText);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+        return 'La latitude doit être un nombre compris entre -90 et 90.';
+      }
+      if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        return 'La longitude doit être un nombre compris entre -180 et 180.';
+      }
+    }
+    return null;
+  }
+
+  private buildNodes(input: {
+    country: string;
+    city: string;
+    arrondissement: string;
+    sector: string;
+    neighborhood: string;
+    coordinates?: { latitude: number; longitude: number };
+  }): ImportNode[] {
+    const nodes: ImportNode[] = [];
+    const append = (typeCode: ImportUnitType, name: string, parentType: ImportUnitType | null) => {
+      const parentKey = nodes.length ? nodes[nodes.length - 1].key : null;
+      const key = this.nodeKey(parentKey, typeCode, name);
+      nodes.push({
+        key,
+        typeCode,
+        name,
+        parentType,
+        parentKey,
+        ...(typeCode === 'NEIGHBORHOOD' && input.coordinates ? input.coordinates : {}),
+      });
+    };
+
+    append('COUNTRY', input.country, null);
+    append('CITY', input.city, 'COUNTRY');
+    if (input.arrondissement) append('ARRONDISSEMENT', input.arrondissement, 'CITY');
+    if (input.sector) append('SECTOR', input.sector, input.arrondissement ? 'ARRONDISSEMENT' : 'CITY');
+    if (input.neighborhood) {
+      const parentType = input.sector
+        ? 'SECTOR'
+        : input.arrondissement
+          ? 'ARRONDISSEMENT'
+          : 'CITY';
+      append('NEIGHBORHOOD', input.neighborhood, parentType);
+    }
+    return nodes;
+  }
+
+  private validateRelations(nodes: ImportNode[]): string | null {
+    for (const node of nodes) {
+      if (node.parentType && !ALLOWED_PARENT_TYPES[node.typeCode].includes(node.parentType)) {
+        return `Relation territoriale invalide : ${node.parentType} → ${node.typeCode} n’est pas prise en charge par les champs de relation du backend.`;
+      }
+    }
+    return null;
+  }
+
+  private indexUnits(units: TerritorialUnit[]): Map<string, TerritorialUnit> {
+    const result = new Map<string, TerritorialUnit>();
+    const keyById = new Map<string, string>();
+    const ordered = [...units].sort((a, b) => a.depth - b.depth);
+    for (const unit of ordered) {
+      const parentKey = unit.parent_id
+        ? keyById.get(unit.parent_id) ?? `missing-parent:${unit.parent_id}`
+        : null;
+      const key = this.nodeKey(parentKey, unit.type_code as ImportUnitType, unit.name);
+      keyById.set(unit.id, key);
+      result.set(key, unit);
+    }
+    return result;
+  }
+
+  private nodeKey(parentKey: string | null, typeCode: string, name: string): string {
+    return `${parentKey ?? 'ROOT'}|${typeCode}|${normalizeName(name)}`;
+  }
+
+  private restoreAttemptState(draft: ImportDraft): void {
+    if (!draft.attemptedNodes) draft.attemptedNodes = {};
+    if (!draft.result || (draft.result.verified && draft.result.retryableErrors === 0)) return;
+
+    const erroredRows = new Set(
+      draft.result.rows
+        .filter((row) => row.status === 'ERROR')
+        .map((row) => row.row_number),
+    );
+    for (const record of draft.records) {
+      if (!erroredRows.has(record.rowNumber)) continue;
+      for (const node of record.nodes) {
+        draft.attemptedNodes[node.key] ??= { id: null, retryAllowed: false };
+      }
+    }
+    this.saveDraft(draft);
+  }
+
+  private isDefinitiveApiRejection(error: unknown): boolean {
+    return error instanceof HttpErrorResponse
+      && error.status >= 400
+      && error.status < 500
+      && ![408, 409, 425, 429].includes(error.status);
+  }
+
+  private async createNode(node: ImportNode, parentId: string | null): Promise<Country | City | Arrondissement | Sector | Quartier> {
+    switch (node.typeCode) {
+      case 'COUNTRY':
+        return firstValueFrom(this.api.createCountry({ name: node.name }));
+      case 'CITY':
+        if (!parentId || node.parentType !== 'COUNTRY') throw new Error('Pays parent introuvable pour la Ville.');
+        return firstValueFrom(this.api.createCity({ name: node.name, countryId: parentId }));
+      case 'ARRONDISSEMENT':
+        if (!parentId || node.parentType !== 'CITY') throw new Error('Ville parente introuvable pour l’Arrondissement.');
+        return firstValueFrom(this.api.createArrondissement({ name: node.name, cityId: parentId }));
+      case 'SECTOR':
+        if (!parentId) throw new Error('Unité parente introuvable pour le Secteur.');
+        return firstValueFrom(this.api.createSector({
+          name: node.name,
+          ...(node.parentType === 'ARRONDISSEMENT' ? { arrondissementId: parentId } : { cityId: parentId }),
+        }));
+      case 'NEIGHBORHOOD':
+        if (!parentId) throw new Error('Unité parente introuvable pour le Quartier.');
+        if (node.latitude === undefined || node.longitude === undefined) {
+          throw new Error('Un Quartier à créer doit avoir une latitude et une longitude.');
+        }
+        return firstValueFrom(this.api.createNeighborhood({
+          name: node.name,
+          ...(node.parentType === 'SECTOR' ? { sectorId: parentId } : {}),
+          ...(node.parentType === 'ARRONDISSEMENT' ? { arrondissementId: parentId } : {}),
+          ...(node.parentType === 'CITY' ? { cityId: parentId } : {}),
+          latitude: node.latitude,
+          longitude: node.longitude,
+        }));
+    }
+  }
+
+  private applyExecutionErrors(
+    rows: ImportPreviewRow[],
+    records: ImportRecord[],
+    errors: Map<string, string>,
+  ): ImportPreviewRow[] {
+    const validRowNumbers = new Set(records.map((record) => record.rowNumber));
+    return rows.map((row) => {
+      const message = errors.get(`row:${row.row_number}`);
+      if (!message || !validRowNumbers.has(row.row_number)) return row;
+      return { ...row, status: 'ERROR', severity: 'error', message };
+    });
+  }
+
+  private applyExecutionStatuses(
+    rows: ImportPreviewRow[],
+    records: ImportRecord[],
+    errors: Map<string, string>,
+    initialIndex: Map<string, TerritorialUnit>,
+    finalIndex: Map<string, TerritorialUnit>,
+  ): ImportPreviewRow[] {
+    const recordsByRow = new Map(records.map((record) => [record.rowNumber, record]));
+    return rows.map((row) => {
+      const error = errors.get(`row:${row.row_number}`);
+      if (error) return { ...row, status: 'ERROR', severity: 'error', message: error };
+
+      const record = recordsByRow.get(row.row_number);
+      if (!record || row.status === 'DUPLICATE_IN_FILE') return row;
+      const leaf = record.nodes[record.nodes.length - 1];
+      if (initialIndex.has(leaf.key)) {
+        return {
+          ...row,
+          status: 'REUSE',
+          severity: 'ok',
+          message: 'Unité existante; elle a été conservée sans modification.',
+        };
+      }
+      if (record.nodes.every((node) => finalIndex.has(node.key))) {
+        return {
+          ...row,
+          status: 'VERIFIED',
+          severity: 'ok',
+          message: 'Création confirmée après rechargement du référentiel backend.',
+        };
+      }
+      return row;
+    });
+  }
+
+  private errorRow(rowNumber: number, message: string, nodes: ImportNode[] = []): ImportPreviewRow {
     return {
       row_number: rowNumber,
-      path: '',
-      type_code: null,
-      name: null,
-      status: 'ERROR' as RowStatus,
-      parent_path: null,
+      path: nodes.map((node) => node.name).join(' / '),
+      type_code: nodes[nodes.length - 1]?.typeCode ?? null,
+      name: nodes[nodes.length - 1]?.name ?? null,
+      status: 'ERROR',
+      parent_path: nodes.slice(0, -1).map((node) => node.name).join(' / ') || null,
       message,
-      severity: 'error' as RowSeverity,
+      severity: 'error',
     };
   }
 
-  private buildPathParts(parsed: ParsedRow): { typeCode: string; name: string; normName: string }[] {
-    const map = ['REGION', 'PROVINCE', 'CITY', 'ARRONDISSEMENT', 'SECTOR', 'VILLAGE', 'NEIGHBORHOOD'];
-    const parts: { typeCode: string; name: string; normName: string }[] = [];
-    for (let i = 0; i < TEMPLATE_COLUMNS.length; i++) {
-      const val = cleanCell(parsed.values[i]);
-      if (isBlank(val)) continue;
-      parts.push({ typeCode: map[i], name: val, normName: normalizeName(val) });
-    }
-    return parts;
-  }
-
-  private validateLine(
-    parts: { typeCode: string; name: string; normName: string }[],
-    profile: TerritorialProfile
-  ): { ok: boolean; message: string } {
-    for (let i = 0; i < parts.length - 1; i++) {
-      const parent = parts[i].typeCode;
-      const child = parts[i + 1].typeCode;
-      const allowed = profile.allowed_relations.some((r) => r.parent === parent && r.child === child);
-      if (!allowed) {
-        const pl = profile.types.find((t) => t.code === parent)?.label ?? parent;
-        const cl = profile.types.find((t) => t.code === child)?.label ?? child;
-        return { ok: false, message: `Relation interdite : ${pl} → ${cl}. Le profil territorial n'autorise pas ce rattachement.` };
+  private sniffDelimiter(text: string): string {
+    const counts = new Map([[';', 0], [',', 0], ['\t', 0]]);
+    let quoted = false;
+    for (let index = 0; index < text.length; index++) {
+      const character = text[index];
+      if (character === '"') {
+        if (quoted && text[index + 1] === '"') index++;
+        else quoted = !quoted;
+      } else if (!quoted && (character === '\r' || character === '\n')) {
+        break;
+      } else if (!quoted && counts.has(character)) {
+        counts.set(character, (counts.get(character) ?? 0) + 1);
       }
     }
-    return { ok: true, message: '' };
+    return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
   }
 
-  // ===== Cycle de vie des imports (mock en mémoire) =====
-
-  async createImport(fileName: string, countryCode: string): Promise<MockImport> {
-    const imp: MockImport = {
-      id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      file_name: fileName,
-      country_code: countryCode,
-      status: 'VALIDATED',
-      statistics: { totalRows: 0, created: 0, reused: 0, updated: 0, duplicates: 0, errors: 0, reactivated: 0 },
-      idempotency_key: `${Date.now()}-mock`,
-      uploaded_by: 'Administrateur',
-      created_at: new Date().toISOString(),
-      confirmed_at: null,
-      completed_at: null,
-      rows: [],
+  private parseCsvText(text: string, delimiter: string): CsvRecord[] {
+    const records: CsvRecord[] = [];
+    let cells: string[] = [];
+    let cell = '';
+    let quoted = false;
+    let line = 1;
+    let recordLine = 1;
+    let closedQuote = false;
+    const endRecord = () => {
+      cells.push(cell);
+      records.push({ lineNumber: recordLine, cells });
+      cells = [];
+      cell = '';
+      closedQuote = false;
+      recordLine = line + 1;
     };
-    this.imports.unshift(imp);
-    return imp;
-  }
 
-  saveImportRows(importId: string, rows: Omit<ImportRow, 'id' | 'import_id' | 'created_at'>[]) {
-    const imp = this.imports.find((i) => i.id === importId);
-    if (!imp) return;
-    imp.rows = rows.map((r, i) => ({
-      ...r,
-      id: `row-${importId}-${i}`,
-      import_id: importId,
-      created_at: new Date().toISOString(),
-    }));
-  }
-
-  getImportRows(importId: string): ImportRow[] {
-    return this.imports.find((i) => i.id === importId)?.rows ?? [];
-  }
-
-  getImport(id: string): MockImport | null {
-    return this.imports.find((i) => i.id === id) ?? null;
-  }
-
-  listImports(): MockImport[] {
-    return [...this.imports];
-  }
-
-  cancelImport(id: string): void {
-    const imp = this.imports.find((i) => i.id === id);
-    if (!imp) return;
-    if (imp.status === 'COMPLETED') throw new Error('Un import terminé ne peut pas être annulé.');
-    imp.status = 'CANCELLED';
-  }
-
-  // ===== Confirmation =====
-
-  confirmImport(importId: string): { created: number; reused: number; reactivated: number; errors: number } {
-    const imp = this.imports.find((i) => i.id === importId);
-    if (!imp) throw new Error('Import introuvable.');
-    if (imp.status === 'COMPLETED') throw new Error('IMPORT_ALREADY_CONFIRMED');
-    if (imp.status !== 'VALIDATED') throw new Error('L\'import doit être validé avant confirmation.');
-
-    imp.status = 'COMMITTING';
-
-    const rows = imp.rows;
-    const profile = this.territory.getProfile(imp.country_code);
-    if (!profile) throw new Error('Profil territorial introuvable.');
-
-    const keyOf = (parentId: string | null, t: string, n: string) => `${parentId ?? 'ROOT'}|${t}|${n}`;
-    const existing = new Map<string, TerritorialUnit>();
-    for (const u of this.territory.listUnits({ pageSize: 100000 }).data) {
-      existing.set(keyOf(u.parent_id, u.type_code, u.normalized_name), u);
-    }
-    const inFileCreated = new Map<string, TerritorialUnit>();
-
-    let created = 0, reused = 0, reactivated = 0, errors = 0;
-
-    for (const row of rows) {
-      if (row.severity === 'error') { errors++; continue; }
-      if (row.status !== 'CREATE' && row.status !== 'REACTIVATE') {
-        if (row.status === 'REUSE') reused++;
+    for (let index = 0; index < text.length; index++) {
+      const character = text[index];
+      if (quoted) {
+        if (character === '"') {
+          if (text[index + 1] === '"') {
+            cell += '"';
+            index++;
+          } else {
+            quoted = false;
+            closedQuote = true;
+          }
+        } else {
+          cell += character;
+          if (character === '\n') line++;
+        }
         continue;
       }
-      const parts = (row.path ?? '').split(' / ').map((s) => s.trim()).filter(Boolean);
-      let parentId: string | null = null;
 
-      for (let i = 0; i < parts.length; i++) {
-        const name = parts[i];
-        const typeCode = this.typeAtPosition(profile, i, parts.length, row.type_code);
-        const norm = normalizeName(name);
-        const key = keyOf(parentId, typeCode, norm);
-        const isLeaf = i === parts.length - 1;
-
-        let unit = existing.get(key) ?? inFileCreated.get(key);
-        if (unit) {
-          if (isLeaf && row.status === 'REACTIVATE' && !unit.active) {
-            this.territory.setUnitActive(unit.id, true);
-            reactivated++;
-          } else if (isLeaf) {
-            reused++;
-          }
-          parentId = unit.id;
-        } else {
-          unit = this.territory.createUnit({
-            countryCode: imp.country_code,
-            typeCode,
-            name,
-            parentId,
-            createdBy: 'import',
-          });
-          inFileCreated.set(key, unit);
-          existing.set(key, unit);
-          if (isLeaf) created++;
-          parentId = unit.id;
-        }
+      if (closedQuote && character !== delimiter && character !== '\r' && character !== '\n' && character !== ' ') {
+        throw new Error('IMPORT_FILE_INVALID: guillemet inattendu après un champ CSV cité.');
+      }
+      if (character === '"' && cell.length === 0 && !closedQuote) {
+        quoted = true;
+      } else if (character === delimiter) {
+        cells.push(cell);
+        cell = '';
+        closedQuote = false;
+      } else if (character === '\r' || character === '\n') {
+        if (character === '\r' && text[index + 1] === '\n') index++;
+        endRecord();
+        line++;
+        recordLine = line;
+      } else if (!closedQuote) {
+        cell += character;
       }
     }
 
-    imp.statistics = { ...imp.statistics, created, reused, reactivated, errors };
-    imp.status = 'COMPLETED';
-    imp.confirmed_at = new Date().toISOString();
-    imp.completed_at = imp.confirmed_at;
-
-    this.territory.logAudit('IMPORT_CONFIRM', 'territorial_imports', importId, imp.file_name, imp.statistics);
-    return { created, reused, reactivated, errors };
-  }
-
-  private typeAtPosition(profile: TerritorialProfile, position: number, total: number, leafType: string | null): string {
-    const types = [...profile.types].filter((t) => t.code !== 'COUNTRY').sort((a, b) => a.order - b.order);
-    if (position === total - 1 && leafType) return leafType;
-    return types[Math.min(position, types.length - 1)]?.code ?? 'SECTOR';
-  }
-
-  // ===== Téléchargements =====
-
-  async generateTemplate(profile: TerritorialProfile): Promise<Blob> {
-    const sep = '\t';
-    const lines: string[] = [];
-    lines.push(TEMPLATE_COLUMNS.join(sep));
-    lines.push(['Région A', 'Province A', 'Ville X', 'Arrondissement 1', 'Secteur 1', '', ''].join(sep));
-    lines.push(['Région A', 'Province A', 'Ville X', 'Arrondissement 1', 'Secteur 2', '', ''].join(sep));
-    lines.push(['Région A', 'Province A', 'Ville X', 'Arrondissement 2', 'Secteur 3', '', ''].join(sep));
-    lines.push(['Région A', 'Province B', 'Ville Y', '', '', 'Village 1', ''].join(sep));
-    lines.push(['Région A', 'Province B', 'Ville Y', '', '', 'Village 2', ''].join(sep));
-
-    const instructions = [
-      'INSTRUCTIONS POUR LE REMPLISSAGE',
-      '',
-      '1. Colonnes obligatoires : Région, Province et Ville.',
-      '2. Colonnes facultatives : Arrondissement, Secteur, Village et Quartier peuvent être vides.',
-      '3. Une cellule vide signifie que ce niveau n\'est pas renseigné pour la ligne.',
-      '4. Ne pas inventer d\'arrondissement pour compléter une ligne.',
-      '5. Conserver les noms tels que fournis (la comparaison ignore la casse et les accents).',
-      '6. Plusieurs lignes peuvent partager la même région, province et ville.',
-      '7. Les doublons sont détectés par type + parent + nom normalisé.',
-      '',
-      'EXEMPLE',
-      'Région A / Province A / Ville X / Arrondissement 1 / Secteur 1',
-      'Région A / Province B / Ville Y / Village 1 (sans arrondissement)',
-    ].join('\n');
-
-    const content = lines.join('\n') + '\n\n' + instructions;
-    return new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8' });
-  }
-
-  async generateReport(rows: ImportRow[], stats: ImportStatistics, fileName: string): Promise<Blob> {
-    const sep = '\t';
-    const out: string[] = [];
-    out.push('RAPPORT D\'IMPORTATION');
-    out.push(['Fichier', fileName].join(sep));
-    out.push(['Date', new Date().toLocaleString('fr-FR')].join(sep));
-    out.push('');
-    out.push(['Indicateur', 'Valeur'].join(sep));
-    out.push(['Lignes analysées', stats.totalRows].join(sep));
-    out.push(['Unités créées', stats.created].join(sep));
-    out.push(['Unités réutilisées', stats.reused].join(sep));
-    out.push(['Unités réactivées', stats.reactivated].join(sep));
-    out.push(['Doublons détectés', stats.duplicates].join(sep));
-    out.push(['Lignes rejetées', stats.errors].join(sep));
-    out.push('');
-    out.push(['Ligne', 'Chemin', 'Type', 'Nom', 'Statut', 'Sévérité', 'Message'].join(sep));
-    for (const r of rows) {
-      out.push([r.row_number, r.path ?? '', r.type_code ?? '', r.name ?? '', r.status ?? '', r.severity, r.message ?? ''].join(sep));
+    if (quoted) throw new Error('IMPORT_FILE_INVALID: champ CSV entre guillemets non terminé.');
+    if (cell.length > 0 || cells.length > 0 || closedQuote) {
+      cells.push(cell);
+      records.push({ lineNumber: recordLine, cells });
     }
-    return new Blob(['\ufeff' + out.join('\n')], { type: 'text/csv;charset=utf-8' });
+    return records;
   }
 
-  downloadBlob(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  private escapeCsv(value: string): string {
+    return /[;"\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+  }
+
+  private apiErrorMessage(error: unknown): string {
+    if (typeof error === 'object' && error !== null && 'error' in error) {
+      const response = (error as { error?: unknown }).error;
+      if (typeof response === 'object' && response !== null && 'message' in response) {
+        const message = (response as { message?: unknown }).message;
+        if (typeof message === 'string') return message;
+      }
+    }
+    return error instanceof Error ? error.message : 'Erreur inconnue retournée par l’API.';
   }
 }

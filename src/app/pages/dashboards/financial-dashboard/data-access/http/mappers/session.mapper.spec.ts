@@ -10,14 +10,17 @@ describe('session.mapper', () => {
         role: 'Administrateur',
         droitsFinance: true,
         permissions: ['dashboard.view', 'roles.manage'],
+        agence: null,
       };
-      expect(mapSessionUtilisateurDto(dto)).toEqual({
+      const result = mapSessionUtilisateurDto(dto);
+      expect(result).toEqual({
         idUtilisateur: '64f1a2b3c4d5e6f7a8b9c1a1',
         nomAffiche: 'Ky Fatimata',
         role: Role.ADMINISTRATEUR,
         droitsFinance: true,
         permissions: ['dashboard.view', 'roles.manage'],
       });
+      expect(Object.prototype.hasOwnProperty.call(result, 'agence')).toBe(false);
     });
 
     it("gère role=null (financialRole jamais assigné) sans planter — fermé par défaut côté guards", () => {

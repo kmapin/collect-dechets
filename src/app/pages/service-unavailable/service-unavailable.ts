@@ -2,6 +2,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import {
+  clearTerritorialImportReturnUrl,
+  getTerritorialImportReturnUrl,
+} from '../../core/territorial-import-return';
 
 /** Page affichée quand le backend est injoignable (panne serveur : 502/503/504,
  * ou requête réseau qui échoue totalement — status 0, "Failed to fetch"). Déclenchée
@@ -18,6 +22,7 @@ export class ServiceUnavailable implements OnInit, OnDestroy {
   isBackOnline = false;
   attemptCount = 0;
   secondsToNextRetry = 0;
+  interruptedImportUrl: string | null = null;
 
   private readonly retryIntervalSeconds = 15;
   private countdownHandle?: ReturnType<typeof setInterval>;
@@ -25,6 +30,7 @@ export class ServiceUnavailable implements OnInit, OnDestroy {
   constructor(private router: Router) {}
 
   ngOnInit(): void {
+    this.interruptedImportUrl = getTerritorialImportReturnUrl();
     this.startCountdown();
   }
 
@@ -56,7 +62,9 @@ export class ServiceUnavailable implements OnInit, OnDestroy {
         if (res.ok) {
           this.isBackOnline = true;
           if (this.countdownHandle) clearInterval(this.countdownHandle);
-          setTimeout(() => this.router.navigateByUrl('/'), 1200);
+          if (!this.interruptedImportUrl) {
+            setTimeout(() => this.router.navigateByUrl('/'), 1200);
+          }
         } else {
           this.startCountdown();
         }
@@ -67,7 +75,18 @@ export class ServiceUnavailable implements OnInit, OnDestroy {
       });
   }
 
+  retourImportInterrompu(): void {
+    if (!this.interruptedImportUrl) return;
+
+    const returnUrl = this.interruptedImportUrl;
+    this.interruptedImportUrl = null;
+    clearTerritorialImportReturnUrl();
+    void this.router.navigateByUrl(returnUrl);
+  }
+
   retourAccueil(): void {
+    this.interruptedImportUrl = null;
+    clearTerritorialImportReturnUrl();
     this.router.navigateByUrl('/');
   }
 }

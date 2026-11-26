@@ -8,9 +8,11 @@ import { TerritoryService } from '../services/territory.service';
 import { TerritorialUnit, TYPE_LABELS } from '../models/models';
 import { PageHeaderComponent } from '../../../shared/decoupage-territorial/page-header.component';
 import { TypeBadgeComponent } from '../../../shared/decoupage-territorial/type-badge.component';
+import { TerritorialNavigationComponent } from '../../../shared/decoupage-territorial/territorial-navigation.component';
 import { formatDate } from '../services/territorial-utils';
 import { Pencil, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-angular';
 import { IconComponent } from '../../../shared/decoupage-territorial/icon.component';
+import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 
 interface TreeNode {
   unit: TerritorialUnit;
@@ -21,7 +23,7 @@ interface TreeNode {
 @Component({
   selector: 'app-unit-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, PageHeaderComponent, TypeBadgeComponent, IconComponent],
+  imports: [CommonModule, RouterLink, PageHeaderComponent, TypeBadgeComponent, TerritorialNavigationComponent, IconComponent],
   templateUrl: './unit-detail.component.html',
   styleUrl: './unit-detail.component.scss',
 })
@@ -54,6 +56,7 @@ export class UnitDetailComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private confirmDialog: ConfirmDialogService,
     public territory: TerritoryService
   ) {}
 
@@ -124,7 +127,14 @@ export class UnitDetailComponent implements OnInit, OnDestroy {
   async deleteUnit() {
     const unit = this.unit();
     if (!unit) return;
-    if (!window.confirm(`Supprimer « ${unit.name} » ? Cette action est irréversible.`)) return;
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Supprimer cette unité territoriale ?',
+      message: `Voulez-vous supprimer « ${unit.name} » ? Cette action est irréversible.`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler',
+    });
+    if (!confirmed) return;
 
     this.actionError.set(null);
     try {

@@ -1,30 +1,55 @@
 <div class="page-container">
   <app-page-header title="Prévisualisation de l'import"
-    [subtitle]="'Fichier : ' + fileName + ' — aucune donnée n\'est encore modifiée.'"
+    [subtitle]="'Fichier : ' + fileName + ' — les lignes valides seront envoyées au backend après confirmation.'"
     [backLink]="'/territorial/import'" />
 
   @if (error()) {
   <div class="alert alert-error">{{ error() }}</div>
   }
 
-  @if (confirmed() && confirmResult(); as r) {
+  @if (result(); as r) {
+  @if (r.verified && r.retryableErrors === 0 && r.errors === 0) {
   <div class="alert alert-success">
     <app-icon [icon]="icons.CheckCircle2" [size]="16" />
-    Import terminé : {{ r.created }} unité(s) créée(s), {{ r.reused }} réutilisée(s), {{ r.reactivated }} réactivée(s),
-    {{ r.errors }} erreur(s).
+    Import vérifié après rechargement du backend : {{ r.created }} unité(s) créée(s), {{ r.reused }} réutilisée(s).
     <a routerLink="/territorial/units" style="margin-left: 8px; font-weight: 600">Voir les unités</a>
   </div>
+  }
+  @if (r.verified && r.retryableErrors > 0) {
+  <div class="alert alert-warning" role="status">
+    Import partiel : {{ r.created }} unité(s) créée(s), {{ r.reused }} réutilisée(s), {{ r.retryableErrors }} ligne(s) non confirmée(s) par le backend.
+    Relancez pour vérifier le référentiel. Une écriture dont le résultat est incertain ne sera pas renvoyée automatiquement, afin d’éviter un doublon.
+  </div>
+  }
+  @if (r.verified && r.retryableErrors === 0 && r.errors > 0) {
+  <div class="alert alert-warning" role="status">
+    Import exécuté pour les lignes valides : {{ r.created }} unité(s) créée(s), {{ r.reused }} réutilisée(s), {{ r.errors }} ligne(s) ignorée(s) ou en erreur.
+    Les créations confirmées ont été retrouvées dans le backend. Corrigez les lignes affichées en erreur puis relancez l’analyse pour les importer.
+    <a routerLink="/territorial/units" style="margin-left: 8px; font-weight: 600">Voir les unités</a>
+  </div>
+  }
+  @if (!r.verified) {
+  <div class="alert alert-warning" role="status">
+    Le rechargement backend n’a pas permis de vérifier toutes les écritures. Aucun succès global n’est annoncé; relancez la vérification. Les écritures au résultat incertain ne seront pas renvoyées automatiquement, afin d’éviter un doublon.
+  </div>
+  }
   }
 
   @if (stats(); as s) {
   <div class="stat-cards">
     <div class="stat-card tone-created">
       <div class="stat-value">{{ s.created }}</div>
-      <div class="stat-label">Éléments à créer</div>
+      <div class="stat-label">
+        @if (result()) {
+          {{ result()?.verified ? 'Unités créées et vérifiées' : 'Unités confirmées après rechargement' }}
+        } @else {
+          Unités à créer
+        }
+      </div>
     </div>
     <div class="stat-card">
       <div class="stat-value">{{ s.reused }}</div>
-      <div class="stat-label">Existant réutilisé</div>
+      <div class="stat-label">Unités existantes réutilisées</div>
     </div>
     <div class="stat-card tone-warning">
       <div class="stat-value">{{ s.duplicates }}</div>
@@ -34,22 +59,14 @@
       <div class="stat-value">{{ s.errors }}</div>
       <div class="stat-label">Erreurs à corriger</div>
     </div>
-    @if (s.reactivated > 0) {
-    <div class="stat-card">
-      <div class="stat-value">{{ s.reactivated }}</div>
-      <div class="stat-label">Réactivations proposées</div>
-    </div>
-    }
   </div>
 
   <div class="table-card">
     <div class="table-toolbar">
       <div class="segmented">
         <button [class.active]="filter() === 'all'" (click)="setFilter('all')">Tout ({{ rows().length }})</button>
-        <button [class.active]="filter() === 'created'" (click)="setFilter('created')">À créer ({{ s.created
-          }})</button>
-        <button [class.active]="filter() === 'warnings'" (click)="setFilter('warnings')">Avertissements ({{ s.duplicates
-          + s.reactivated }})</button>
+        <button [class.active]="filter() === 'created'" (click)="setFilter('created')">{{ createdFilterLabel }} ({{ createdRowsCount }})</button>
+        <button [class.active]="filter() === 'warnings'" (click)="setFilter('warnings')">Doublons ({{ s.duplicates }})</button>
         <button [class.active]="filter() === 'errors'" (click)="setFilter('errors')">Erreurs ({{ s.errors }})</button>
       </div>
       <button class="btn btn-secondary" (click)="downloadReport()">
@@ -93,55 +110,64 @@
   </div>
 
   <div class="confirm-bar card">
-    @if (hasBlockingErrors) {
+    @if (isComplete) {
+    <div class="confirm-info">
+      <app-icon [icon]="icons.CheckCircle2" [size]="18" />
+      <div>
+        <strong>Les écritures ont été confirmées par un rechargement du référentiel.</strong>
+        <p class="muted">Les unités sont maintenant disponibles depuis les API territoriales.</p>
+      </div>
+    </div>
+    <div class="confirm-actions">
+      <a routerLink="/territorial/units" class="btn btn-primary">Voir les unités</a>
+    </div>
+    } @else if (hasImportableRows) {
+    @if (result()?.retryableErrors) {
     <div class="confirm-info blocking">
       <app-icon [icon]="icons.XCircle" [size]="18" />
       <div>
-        <strong>{{ s.errors }} erreur(s) bloquante(s)</strong>
-        <p class="muted">Corrigez le fichier et relancez l'analyse. Les lignes en erreur ne seront pas importées.</p>
+        <strong>{{ result()?.retryableErrors }} ligne(s) n’ont pas été confirmée(s).</strong>
+        <p class="muted">Relancez pour vérifier à nouveau le référentiel. Les écritures au résultat incertain ne seront pas renvoyées automatiquement; les erreurs de prévalidation restent consultables séparément.</p>
+      </div>
+    </div>
+    } @else if (hasPreviewErrors) {
+    <div class="confirm-info blocking">
+      <app-icon [icon]="icons.XCircle" [size]="18" />
+      <div>
+        <strong>{{ s.errors }} ligne(s) invalide(s) seront ignorées.</strong>
+        <p class="muted">Les lignes valides peuvent être importées. Les créations sont unitaires et ne forment pas une transaction globale.</p>
+      </div>
+    </div>
+    } @else {
+    <div class="confirm-info">
+      <app-icon [icon]="icons.Info" [size]="18" />
+      <div>
+        <strong>{{ s.created }} unité(s) à créer, {{ s.reused }} déjà présentes.</strong>
+        <p class="muted">Chaque élément sera envoyé séparément au backend dans l’ordre parent → enfant. Une erreur peut donc laisser des créations partielles.</p>
+      </div>
+    </div>
+    }
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" (click)="cancel()">{{ result() ? 'Quitter' : 'Annuler l’aperçu' }}</button>
+      <button class="btn btn-primary" [disabled]="confirming() || !canRetry" (click)="confirm()">
+        @if (confirming()) {
+        <app-icon [icon]="icons.Loader2" [size]="16" class="spin" /> Application…
+        } @else {
+        <app-icon [icon]="result() ? icons.RefreshCw : icons.ShieldCheck" [size]="16" />
+        {{ result() ? 'Réessayer les lignes non confirmées' : 'Confirmer l’importation' }}
+        }
+      </button>
+    </div>
+    } @else {
+    <div class="confirm-info blocking">
+      <app-icon [icon]="icons.XCircle" [size]="18" />
+      <div>
+        <strong>Aucune ligne importable.</strong>
+        <p class="muted">Corrigez les lignes en erreur puis analysez de nouveau le CSV.</p>
       </div>
     </div>
     <div class="confirm-actions">
       <a routerLink="/territorial/import" class="btn btn-secondary">Corriger le fichier</a>
-      <button class="btn btn-primary" [disabled]="true">
-        <app-icon [icon]="icons.ShieldCheck" [size]="16" />
-        Confirmation indisponible
-      </button>
-    </div>
-    } @else if (confirmed()) {
-    <div class="confirm-info">
-      <app-icon [icon]="icons.Info" [size]="18" />
-      <div>
-        <strong>Import confirmé et enregistré.</strong>
-        <p class="muted">Le lot est consultable dans l'historique. Une double confirmation ne crée pas de doublons.</p>
-      </div>
-    </div>
-    <div class="confirm-actions">
-      <a routerLink="/territorial/import/history" class="btn btn-secondary">Historique</a>
-      <button class="btn btn-primary" [disabled]="true">
-        <app-icon [icon]="icons.CheckCircle2" [size]="16" />
-        Déjà confirmé
-      </button>
-    </div>
-    } @else {
-    <div class="confirm-info">
-      <app-icon [icon]="icons.CheckCircle2" [size]="18" />
-      <div>
-        <strong>{{ s.created }} unité(s) seront réellement créées.</strong>
-        <p class="muted">{{ s.reused }} élément(s) resteront inchangés. L'opération est idempotente : une double
-          confirmation ne crée pas de doublons.</p>
-      </div>
-    </div>
-    <div class="confirm-actions">
-      <button class="btn btn-secondary" (click)="cancel()">Annuler l'import</button>
-      <button class="btn btn-primary" [disabled]="confirming()" (click)="confirm()">
-        @if (confirming()) {
-        <app-icon [icon]="icons.Loader2" [size]="16" class="spin" /> Application…
-        } @else {
-        <app-icon [icon]="icons.ShieldCheck" [size]="16" />
-        Confirmer l'importation
-        }
-      </button>
     </div>
     }
   </div>

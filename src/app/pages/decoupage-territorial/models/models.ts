@@ -1,37 +1,3 @@
-export type TerritoryTypeCode =
-  | 'COUNTRY'
-  | 'REGION'
-  | 'PROVINCE'
-  | 'CITY'
-  | 'ARRONDISSEMENT'
-  | 'SECTOR'
-  | 'VILLAGE'
-  | 'NEIGHBORHOOD'
-  | 'CUSTOM';
-
-export interface TerritoryType {
-  code: TerritoryTypeCode | string;
-  label: string;
-  order: number;
-  optional: boolean;
-}
-
-export interface AllowedRelation {
-  parent: string;
-  child: string;
-}
-
-export interface TerritorialProfile {
-  id: string;
-  country_code: string;
-  country_name: string;
-  types: TerritoryType[];
-  allowed_relations: AllowedRelation[];
-  active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface TerritorialUnit {
   id: string;
   country_code: string;
@@ -42,7 +8,6 @@ export interface TerritorialUnit {
   ancestor_ids: string[];
   depth: number;
   code: string | null;
-  active?: boolean;
   sort_order: number;
   metadata: Record<string, any>;
   created_at: string;
@@ -56,44 +21,18 @@ export interface TerritorialUnitWithChildren extends TerritorialUnit {
   parent_name?: string | null;
 }
 
-export type ImportStatus =
-  | 'UPLOADED'
-  | 'VALIDATING'
-  | 'VALIDATED'
-  | 'VALIDATION_FAILED'
-  | 'COMMITTING'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'CANCELLED';
-
 export interface ImportStatistics {
   totalRows: number;
   created: number;
   reused: number;
-  updated: number;
   duplicates: number;
   errors: number;
-  reactivated: number;
-}
-
-export interface TerritorialImport {
-  id: string;
-  file_name: string;
-  country_code: string;
-  status: ImportStatus;
-  statistics: ImportStatistics;
-  idempotency_key: string;
-  uploaded_by: string | null;
-  created_at: string;
-  confirmed_at: string | null;
-  completed_at: string | null;
 }
 
 export type RowStatus =
   | 'CREATE'
+  | 'VERIFIED'
   | 'REUSE'
-  | 'UPDATE'
-  | 'REACTIVATE'
   | 'DUPLICATE_IN_FILE'
   | 'ERROR';
 
@@ -113,23 +52,6 @@ export interface ImportRow {
   created_at: string;
 }
 
-export interface AuditLog {
-  id: string;
-  action: string;
-  entity_type: string;
-  entity_id: string | null;
-  entity_name: string | null;
-  details: Record<string, any>;
-  created_at: string;
-  created_by: string | null;
-}
-
-export interface ValidationResult {
-  ok: boolean;
-  code: string;
-  message: string;
-}
-
 export const TYPE_LABELS: Record<string, string> = {
   COUNTRY: 'Pays',
   REGION: 'Région',
@@ -144,9 +66,8 @@ export const TYPE_LABELS: Record<string, string> = {
 
 export const ROW_STATUS_LABELS: Record<string, string> = {
   CREATE: 'À créer',
+  VERIFIED: 'Création confirmée',
   REUSE: 'Existe déjà',
-  UPDATE: 'À actualiser',
-  REACTIVATE: 'À réactiver',
   DUPLICATE_IN_FILE: 'Doublon dans le fichier',
   ERROR: 'Erreur',
 };

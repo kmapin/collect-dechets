@@ -6,6 +6,7 @@ import { ImportPageComponent } from './territorial-import/import-page/import-pag
 import { ImportHistoryComponent } from './territorial-import/import-history/import-history.component';
 import { ImportPreviewComponent } from './territorial-import/import-preview/import-preview.component';
 import { AuditLogComponent } from './audit-log/audit-log.component';
+import { TERRITORIAL_IMPORT_HISTORY_AUDIT_ENABLED } from './feature-visibility';
 
 export const DECOUPAGE_TERRITORIAL_ROUTES: Routes = [
   {
@@ -19,9 +20,19 @@ export const DECOUPAGE_TERRITORIAL_ROUTES: Routes = [
       { path: 'units/:id', component: UnitDetailComponent },
       { path: 'units/:id/edit', component: UnitFormComponent },
       { path: 'import', component: ImportPageComponent },
-      { path: 'import/history', component: ImportHistoryComponent },
+      {
+        path: 'import/history',
+        ...(TERRITORIAL_IMPORT_HISTORY_AUDIT_ENABLED
+          ? { component: ImportHistoryComponent }
+          : { redirectTo: 'import', pathMatch: 'full' as const }),
+      },
       { path: 'import/:id/preview', component: ImportPreviewComponent },
-      { path: 'audit', component: AuditLogComponent },
+      {
+        path: 'audit',
+        ...(TERRITORIAL_IMPORT_HISTORY_AUDIT_ENABLED
+          ? { component: AuditLogComponent }
+          : { redirectTo: 'units', pathMatch: 'full' as const }),
+      },
     ]
   }
 ];

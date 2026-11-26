@@ -1,25 +1,26 @@
 :host { display: block; }
 
-.import-container { max-width: 1000px; }
+.import-container { max-width: 1040px; }
 
 .steps {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .step {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 14px;
+  min-height: 38px;
+  padding: 7px 12px;
   border-radius: 999px;
   font-size: 13px;
-  font-weight: 500;
-  background: #fff;
-  border: 1px solid var(--color-neutral-200);
-  color: var(--color-neutral-500);
+  font-weight: 600;
+  background: var(--territorial-card);
+  border: 1px solid var(--territorial-border);
+  color: var(--territorial-text-muted);
 
   .step-num {
     display: inline-flex;
@@ -28,29 +29,37 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: var(--color-neutral-100);
+    background: #f1f5f9;
     font-size: 11px;
     font-weight: 700;
   }
 
   &.done {
-    color: var(--color-primary-600);
-    border-color: var(--color-primary-200);
-    .step-num { background: var(--color-primary-100); }
+    color: var(--territorial-text-secondary);
+    border-color: #bfdbfe;
+
+    .step-num {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
   }
 
   &.current {
     color: #fff;
-    background: var(--color-primary-500);
-    border-color: var(--color-primary-500);
-    .step-num { background: rgba(255,255,255,0.25); color: #fff; }
+    background: var(--territorial-blue);
+    border-color: var(--territorial-blue);
+
+    .step-num {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
   }
 }
 
 .import-grid {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 20px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 16px;
   align-items: start;
 
   @media (max-width: 860px) {
@@ -60,14 +69,20 @@
 
 .card {
   padding: 22px;
+
   h3 {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 15px;
     margin-bottom: 12px;
+    color: var(--territorial-text-primary);
   }
-  p { font-size: 14px; line-height: 1.6; }
+
+  p {
+    font-size: 13px;
+    line-height: 1.6;
+  }
 }
 
 .dropzone {
@@ -76,41 +91,62 @@
   align-items: center;
   text-align: center;
   gap: 8px;
-  padding: 32px 20px;
-  border: 2px dashed var(--color-neutral-200);
-  border-radius: var(--radius-md);
-  color: var(--color-neutral-400);
-  transition: all 0.15s;
-  margin: 14px 0;
+  min-height: 190px;
+  padding: 28px 20px;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 10px;
+  color: var(--territorial-text-muted);
+  transition: border-color 0.15s ease, background 0.15s ease;
+  margin: 14px 0 12px;
 
-  p { margin: 0; font-size: 14px; color: var(--color-neutral-600); }
-  svg { stroke: var(--color-neutral-300); }
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--territorial-text-secondary);
+  }
+
+  svg {
+    stroke: #94a3b8;
+  }
 
   &.over {
-    border-color: var(--color-primary-400);
-    background: var(--color-primary-50);
+    border-color: var(--territorial-blue);
+    background: #eff6ff;
   }
 }
 
 .file-label {
-  color: var(--color-primary-600);
+  color: #2563eb;
   font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
+
+  &:hover {
+    color: #1d4ed8;
+  }
 }
 
 .file-selected {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  background: var(--color-primary-50);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  margin-bottom: 14px;
-  color: var(--color-primary-700);
+  min-width: 0;
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  color: #1d4ed8;
 
-  .file-name { font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-name {
+    min-width: 0;
+    font-weight: 600;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .upload-actions {
@@ -121,3 +157,29 @@
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+@media (max-width: 560px) {
+  .steps {
+    gap: 6px;
+  }
+
+  .step {
+    min-height: 34px;
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+
+  .card {
+    padding: 18px 16px;
+  }
+
+  .dropzone {
+    min-height: 170px;
+    padding: 22px 14px;
+  }
+
+  .upload-actions,
+  .upload-actions .btn {
+    width: 100%;
+  }
+}
