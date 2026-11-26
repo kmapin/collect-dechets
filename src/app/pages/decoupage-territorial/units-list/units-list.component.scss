@@ -111,30 +111,97 @@
   white-space: nowrap;
 }
 
-.pagination {
+.pagination-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 14px;
+  padding: 0 0 4px;
 }
 
-.pagination-info {
-  font-size: 13px;
-  color: var(--territorial-text-muted);
+.pagination-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pagination-details,
+.per-page-label {
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.per-page-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.per-page-select {
+  padding: 4px 8px;
+  border: 1px solid var(--territorial-border, #cbd5e1);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--territorial-text-secondary, #334155);
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--territorial-blue, #3b82f6);
+    outline-offset: 1px;
+  }
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.page-num {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--territorial-text-secondary);
-  padding: 0 8px;
+.pagination-numbers {
+  display: flex;
+  gap: 4px;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  padding: 8px;
+  border: 1px solid var(--territorial-border, #d1d5db);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--territorial-text-secondary, #374151);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: #9ca3af;
+    background: #f3f4f6;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.active {
+    border-color: var(--territorial-blue, #3b82f6);
+    background: var(--territorial-blue, #3b82f6);
+    color: #fff;
+  }
+}
+
+.page-number {
+  min-width: 36px;
+  height: 36px;
+  font-weight: 500;
 }
 
 .empty-state svg {
@@ -167,12 +234,22 @@
     flex-basis: 100%;
   }
 
-  .pagination {
-    align-items: flex-start;
+  .pagination-section {
+    align-items: center;
     flex-direction: column;
+    text-align: center;
   }
 
   .pagination-controls {
-    align-self: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pagination-left {
+    justify-content: center;
+  }
+
+  .per-page-group {
+    justify-content: center;
   }
 }

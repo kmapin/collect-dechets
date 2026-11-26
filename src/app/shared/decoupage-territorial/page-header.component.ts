@@ -51,7 +51,7 @@ import { TerritorialNavigationComponent } from './territorial-navigation.compone
       .page-layout-header {
         padding: 22px var(--territorial-page-gutter, 24px);
         color: #fff;
-        background: linear-gradient(120deg, #3b82f6 0%, #16a34a 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #4caf50 100%);
       }
 
       .page-layout-breadcrumb {
@@ -85,7 +85,7 @@ import { TerritorialNavigationComponent } from './territorial-navigation.compone
       h1 {
         margin: 0;
         color: #fff;
-        font-size: clamp(22px, 2.2vw, 32px);
+        font-size: clamp(1.5rem, 3vw, 2.5rem);
         font-weight: 700;
         line-height: 1.2;
         overflow-wrap: anywhere;
@@ -95,7 +95,7 @@ import { TerritorialNavigationComponent } from './territorial-navigation.compone
         max-width: 760px;
         margin: 6px 0 0;
         color: rgba(255, 255, 255, 0.9);
-        font-size: 14px;
+        font-size: clamp(0.875rem, 1.3vw, 1.1rem);
         line-height: 1.5;
       }
 

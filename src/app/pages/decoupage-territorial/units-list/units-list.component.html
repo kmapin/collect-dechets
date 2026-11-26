@@ -99,19 +99,59 @@
       </table>
     </div>
 
-    <div class="pagination">
-      <span class="pagination-info">
-        {{ ((page() - 1) * pageSize) + 1 }}–{{ Math.min(page() * pageSize, total()) }} sur {{ total() }}
-      </span>
-      <div class="pagination-controls">
-        <button class="icon-btn" [disabled]="page() <= 1" (click)="goToPage(page() - 1)">
-          <app-icon [icon]="icons.ChevronLeft" [size]="16" />
-        </button>
-        <span class="page-num">{{ page() }} / {{ totalPages() }}</span>
-        <button class="icon-btn" [disabled]="page() >= totalPages()" (click)="goToPage(page() + 1)">
-          <app-icon [icon]="icons.ChevronRight" [size]="16" />
-        </button>
+    <div class="pagination-section">
+      <div class="pagination-left">
+        <span class="pagination-details">
+          {{ debutItem() }}–{{ finItem() }} sur <strong>{{ total() }}</strong>
+          {{ total() === 1 ? 'unité' : 'unités' }}
+        </span>
+        <div class="per-page-group">
+          <label class="per-page-label" for="units-page-size">Afficher</label>
+          <select
+            id="units-page-size"
+            class="per-page-select"
+            [value]="pageSize()"
+            (change)="onPageSizeChange(+$any($event.target).value)"
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <span class="per-page-label">par page</span>
+        </div>
       </div>
+      @if (totalPages() > 1) {
+        <div class="pagination-controls" role="navigation" aria-label="Pagination">
+          <button class="pagination-btn" [disabled]="page() === 1" (click)="goToPage(1)" title="Première page" aria-label="Première page">
+            <app-icon [icon]="icons.ChevronLeft" [size]="16" />
+            <app-icon [icon]="icons.ChevronLeft" [size]="16" />
+          </button>
+          <button class="pagination-btn" [disabled]="page() === 1" (click)="goToPage(page() - 1)" title="Page précédente" aria-label="Page précédente">
+            <app-icon [icon]="icons.ChevronLeft" [size]="16" />
+          </button>
+          <div class="pagination-numbers">
+            @for (p of numerosDePages(); track p) {
+              <button
+                class="pagination-btn page-number"
+                [class.active]="p === page()"
+                [attr.aria-current]="p === page() ? 'page' : null"
+                (click)="goToPage(p)"
+              >
+                {{ p }}
+              </button>
+            }
+          </div>
+          <button class="pagination-btn" [disabled]="page() === totalPages()" (click)="goToPage(page() + 1)" title="Page suivante" aria-label="Page suivante">
+            <app-icon [icon]="icons.ChevronRight" [size]="16" />
+          </button>
+          <button class="pagination-btn" [disabled]="page() === totalPages()" (click)="goToPage(totalPages())" title="Dernière page" aria-label="Dernière page">
+            <app-icon [icon]="icons.ChevronRight" [size]="16" />
+            <app-icon [icon]="icons.ChevronRight" [size]="16" />
+          </button>
+        </div>
+      }
     </div>
   }
 </div>
