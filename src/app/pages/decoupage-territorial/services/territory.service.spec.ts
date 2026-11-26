@@ -57,13 +57,15 @@ describe('TerritoryService API hierarchy', () => {
       _id: 'city-new',
       name: 'Koudougou',
       countryId: 'bf',
+      latitude: 12.25,
+      longitude: -2.37,
     }));
     const api = {
       getCountries: jasmine.createSpy().and.returnValue(of([
         { id: 'bf', _id: 'bf', name: 'Burkina Faso', code: 'BF' },
       ])),
       getAllCities: jasmine.createSpy().and.returnValue(of([
-        { id: 'city-new', _id: 'city-new', name: 'Koudougou', countryId: 'bf' },
+        { id: 'city-new', _id: 'city-new', name: 'Koudougou', countryId: 'bf', latitude: 12.25, longitude: -2.37 },
       ])),
       getAllArrondissements: jasmine.createSpy().and.returnValue(of([])),
       getAllSectors: jasmine.createSpy().and.returnValue(of([])),
@@ -73,9 +75,66 @@ describe('TerritoryService API hierarchy', () => {
 
     const service = new TerritoryService(api);
     await service.loadApiUnits();
-    await service.createApiUnit({ typeCode: 'CITY', name: 'Koudougou', parentId: 'bf' });
+    await service.createApiUnit({
+      typeCode: 'CITY',
+      name: 'Koudougou',
+      parentId: 'bf',
+      latitude: 12.25,
+      longitude: -2.37,
+    });
 
-    expect(createCitySpy).toHaveBeenCalledWith({ name: 'Koudougou', countryId: 'bf' });
+    expect(createCitySpy).toHaveBeenCalledWith({
+      name: 'Koudougou',
+      countryId: 'bf',
+      latitude: 12.25,
+      longitude: -2.37,
+    });
     expect(service.getApiChildren('bf').map((unit) => unit.name)).toEqual(['Koudougou']);
+    expect(service.getApiUnit('city-new')?.metadata).toEqual(jasmine.objectContaining({
+      latitude: 12.25,
+      longitude: -2.37,
+    }));
+  });
+
+  it('ne renvoie pas le parent d’un quartier quand le rattachement ne change pas', async () => {
+    const updateNeighborhoodSpy = jasmine.createSpy().and.returnValue(of({
+      id: 'neighborhood-1',
+      _id: 'neighborhood-1',
+      name: 'Bilbalogo modifié',
+      sectorId: 'sector-1',
+      latitude: 12.3,
+      longitude: -1.5,
+    }));
+    const api = {
+      getCountries: jasmine.createSpy().and.returnValue(of([
+        { id: 'bf', _id: 'bf', name: 'Burkina Faso', code: 'BF' },
+      ])),
+      getAllCities: jasmine.createSpy().and.returnValue(of([
+        { id: 'city-1', _id: 'city-1', name: 'Ouagadougou', countryId: 'bf' },
+      ])),
+      getAllArrondissements: jasmine.createSpy().and.returnValue(of([])),
+      getAllSectors: jasmine.createSpy().and.returnValue(of([
+        { id: 'sector-1', _id: 'sector-1', name: 'Secteur 1', cityId: 'city-1' },
+      ])),
+      getAllNeighborhoods: jasmine.createSpy().and.returnValue(of([
+        { id: 'neighborhood-1', _id: 'neighborhood-1', name: 'Bilbalogo', sectorId: 'sector-1' },
+      ])),
+      updateNeighborhood: updateNeighborhoodSpy,
+    } as unknown as TerritoryHttpService;
+
+    const service = new TerritoryService(api);
+    await service.loadApiUnits();
+    await service.updateApiUnit('neighborhood-1', 'NEIGHBORHOOD', {
+      name: 'Bilbalogo modifié',
+      parentId: 'sector-1',
+      latitude: 12.3,
+      longitude: -1.5,
+    });
+
+    expect(updateNeighborhoodSpy).toHaveBeenCalledWith('neighborhood-1', {
+      name: 'Bilbalogo modifié',
+      latitude: 12.3,
+      longitude: -1.5,
+    });
   });
 });

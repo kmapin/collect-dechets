@@ -278,12 +278,16 @@ export class TerritoryService {
       case 'NEIGHBORHOOD':
         {
         const parent = input.parentId ? this.getApiUnit(input.parentId) : null;
+        if (input.latitude == null || input.longitude == null) {
+          throw new Error('La latitude et la longitude sont obligatoires pour un quartier.');
+        }
         item = await firstValueFrom(this.api.createNeighborhood({
           name: input.name,
           ...(parent?.type_code === 'SECTOR' ? { sectorId: parent.id } : {}),
           ...(parent?.type_code === 'ARRONDISSEMENT' ? { arrondissementId: parent.id } : {}),
           ...(parent?.type_code === 'CITY' ? { cityId: parent.id } : {}),
-          ...coordinates,
+          latitude: input.latitude,
+          longitude: input.longitude,
         }));
         }
         break;
@@ -302,6 +306,9 @@ export class TerritoryService {
     typeCode: 'COUNTRY' | 'CITY' | 'ARRONDISSEMENT' | 'SECTOR' | 'NEIGHBORHOOD',
     changes: { name: string; code?: string | null; parentId?: string | null; latitude?: number | null; longitude?: number | null },
   ): Promise<TerritorialUnit> {
+    const currentUnit = this.getApiUnit(id);
+    const parentIdChanged = changes.parentId !== undefined
+      && changes.parentId !== currentUnit?.parent_id;
     const coordinates = {
       ...(changes.latitude != null ? { latitude: changes.latitude } : {}),
       ...(changes.longitude != null ? { longitude: changes.longitude } : {}),
@@ -340,12 +347,14 @@ export class TerritoryService {
         break;
       case 'NEIGHBORHOOD':
         {
-          const parent = changes.parentId ? this.getApiUnit(changes.parentId) : null;
+          const parent = parentIdChanged && changes.parentId
+            ? this.getApiUnit(changes.parentId)
+            : null;
           await firstValueFrom(this.api.updateNeighborhood(id, {
             name: changes.name,
-            ...(parent?.type_code === 'SECTOR' ? { sectorId: parent.id } : {}),
-            ...(parent?.type_code === 'ARRONDISSEMENT' ? { arrondissementId: parent.id } : {}),
-            ...(parent?.type_code === 'CITY' ? { cityId: parent.id } : {}),
+            ...(parentIdChanged && parent?.type_code === 'SECTOR' ? { sectorId: parent.id } : {}),
+            ...(parentIdChanged && parent?.type_code === 'ARRONDISSEMENT' ? { arrondissementId: parent.id } : {}),
+            ...(parentIdChanged && parent?.type_code === 'CITY' ? { cityId: parent.id } : {}),
             ...coordinates,
           }));
         }
@@ -354,7 +363,7 @@ export class TerritoryService {
     await this.loadApiUnits();
     const updated = this.getApiUnit(id);
     if (!updated) throw new Error('L’unité modifiée ne figure pas dans la réponse de rechargement.');
-    if (changes.parentId && updated.parent_id !== changes.parentId) {
+    if (parentIdChanged && changes.parentId && updated.parent_id !== changes.parentId) {
       throw new Error('L’API n’a pas confirmé le rattachement au parent sélectionné.');
     }
     return updated;

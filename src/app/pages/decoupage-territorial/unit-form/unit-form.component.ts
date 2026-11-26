@@ -1,6 +1,7 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import * as L from 'leaflet';
 import { TerritoryService } from '../services/territory.service';
 import { TerritorialUnit, TerritorialProfile, TerritoryType } from '../models/models';
 import { PageHeaderComponent } from '../../../shared/decoupage-territorial/page-header.component';
@@ -15,20 +16,32 @@ import { IconComponent } from '../../../shared/decoupage-territorial/icon.compon
   templateUrl: './unit-form.component.html',
   styleUrl: './unit-form.component.scss',
 })
-export class UnitFormComponent implements OnInit {
+export class UnitFormComponent implements OnInit, OnDestroy {
   profile!: TerritorialProfile;
   editId: string | null = null;
   editUnit: TerritorialUnit | null = null;
 
   name = signal('');
   code = signal('');
+  latitude = signal<number | null>(null);
+  longitude = signal<number | null>(null);
   parentTypeCode = signal('COUNTRY');
   parentChain = signal<string[]>([]); // ids sélectionnés dans la cascade
   active = signal(true);
 
   error = signal<string | null>(null);
   saving = signal(false);
+  isLocating = signal(false);
+  locationMessage = signal<string | null>(null);
   icons = { Save, AlertTriangle };
+
+  private readonly DEFAULT_MAP_CENTER: [number, number] = [12.3714, -1.5197];
+  private unitMap?: L.Map;
+  private unitMarker?: L.Marker;
+
+  @ViewChild('unitMapEl') set unitMapEl(el: ElementRef<HTMLDivElement> | undefined) {
+    if (el && !this.unitMap) this.initUnitMap(el.nativeElement);
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -58,25 +71,25 @@ export class UnitFormComponent implements OnInit {
       this.editUnit = unit;
       this.name.set(unit.name);
       this.code.set(unit.code ?? '');
+      this.latitude.set(this.coordinateFrom(unit, 'latitude'));
+      this.longitude.set(this.coordinateFrom(unit, 'longitude'));
+      this.syncMapMarker(true);
       this.active.set(unit.active);
       this.parentTypeCode.set(unit.type_code);
       this.parentChain.set([...unit.ancestor_ids, unit.parent_id ?? 'ROOT'].filter(Boolean));
-      // Pré-remplir la cascade avec les ancêtres
-      this.cascadeSelections = [...unit.ancestor_ids, ...(unit.parent_id ? [unit.parent_id] : [])];
-      for (let i = 0; i < this.cascadeSelections.length; i++) {
-        this.onCascadeChange(i, this.cascadeSelections[i], true);
-      }
+      this.cascadeSelections = unit.parent_id ? [unit.parent_id] : [];
     } else if (parentId && typeCode) {
       // Création d'une subdivision depuis la fiche d'un parent
       const parent = this.territory.getApiUnit(parentId);
       if (parent) {
         this.parentTypeCode.set(typeCode);
-        this.cascadeSelections = [...parent.ancestor_ids, parent.id];
-        for (let i = 0; i < this.cascadeSelections.length; i++) {
-          this.onCascadeChange(i, this.cascadeSelections[i], true);
-        }
+        this.cascadeSelections = [parent.id];
       }
     }
+  }
+
+  ngOnDestroy() {
+    this.unitMap?.remove();
   }
 
   cascadeSelections: string[] = [];
@@ -154,9 +167,61 @@ export class UnitFormComponent implements OnInit {
   }
 
   get canSubmit(): boolean {
+    if (this.editId && !this.editUnit) return false;
     if (!this.name().trim()) return false;
     if (this.selectedType !== 'COUNTRY' && !this.parentId) return false;
+    if (this.editId && !this.hasChanges) return false;
     return true;
+  }
+
+  get hasChanges(): boolean {
+    const unit = this.editUnit;
+    if (!unit) return false;
+    if (cleanCell(this.name()) !== unit.name) return true;
+    if (this.selectedType === 'COUNTRY' && (this.code() || null) !== unit.code) return true;
+    if (this.selectedType !== 'COUNTRY' && this.parentId !== unit.parent_id) return true;
+    return this.latitude() !== this.coordinateFrom(unit, 'latitude')
+      || this.longitude() !== this.coordinateFrom(unit, 'longitude');
+  }
+
+  setCoordinate(field: 'latitude' | 'longitude', value: string) {
+    const coordinate = value.trim() === '' ? null : Number(value);
+    const validCoordinate = coordinate !== null && Number.isFinite(coordinate) ? coordinate : null;
+    if (field === 'latitude') this.latitude.set(validCoordinate);
+    else this.longitude.set(validCoordinate);
+    this.syncMapMarker();
+  }
+
+  useMyLocation() {
+    if (this.isLocating()) return;
+    if (!navigator.geolocation) {
+      this.locationMessage.set("La géolocalisation n'est pas disponible sur cet appareil.");
+      return;
+    }
+    if (!window.isSecureContext) {
+      this.locationMessage.set(
+        'La géolocalisation nécessite une connexion sécurisée (HTTPS). Vous pouvez choisir la position directement sur la carte.',
+      );
+      return;
+    }
+
+    this.locationMessage.set(null);
+    this.isLocating.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.isLocating.set(false);
+        this.applyMapPosition(position.coords.latitude, position.coords.longitude, true);
+        this.locationMessage.set('Position détectée. Enregistrez le formulaire pour la conserver.');
+      },
+      (error) => {
+        this.isLocating.set(false);
+        const detail = error.code === error.PERMISSION_DENIED
+          ? "Accès à la position refusé. Autorisez la géolocalisation ou choisissez un point sur la carte."
+          : 'Impossible de déterminer votre position. Choisissez un point directement sur la carte.';
+        this.locationMessage.set(detail);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   }
 
   async submit() {
@@ -170,12 +235,37 @@ export class UnitFormComponent implements OnInit {
       return;
     }
 
+    const latitude = this.latitude();
+    const longitude = this.longitude();
+    if ((latitude === null) !== (longitude === null)) {
+      this.error.set('Renseignez la latitude et la longitude ensemble.');
+      this.saving.set(false);
+      return;
+    }
+    if (this.selectedType === 'NEIGHBORHOOD' && (latitude === null || longitude === null)) {
+      this.error.set('La latitude et la longitude sont obligatoires pour un quartier.');
+      this.saving.set(false);
+      return;
+    }
+    if (latitude !== null && (latitude < -90 || latitude > 90)) {
+      this.error.set('La latitude doit être comprise entre -90 et 90.');
+      this.saving.set(false);
+      return;
+    }
+    if (longitude !== null && (longitude < -180 || longitude > 180)) {
+      this.error.set('La longitude doit être comprise entre -180 et 180.');
+      this.saving.set(false);
+      return;
+    }
+
     try {
       if (this.editId) {
         await this.territory.updateApiUnit(this.editId, this.selectedType as 'COUNTRY' | 'CITY' | 'ARRONDISSEMENT' | 'SECTOR' | 'NEIGHBORHOOD', {
           name,
           code: this.code() || null,
           parentId: this.selectedType === 'COUNTRY' ? null : this.parentId,
+          latitude,
+          longitude,
         });
         this.router.navigate(['/territorial/units', this.editId]);
       } else {
@@ -184,6 +274,8 @@ export class UnitFormComponent implements OnInit {
           name,
           parentId: this.selectedType === 'COUNTRY' ? null : this.parentId,
           code: this.code() || null,
+          latitude,
+          longitude,
         });
         this.router.navigate(['/territorial/units', created.id]);
       }
@@ -192,5 +284,77 @@ export class UnitFormComponent implements OnInit {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  private coordinateFrom(unit: TerritorialUnit, field: 'latitude' | 'longitude'): number | null {
+    const value = unit.metadata[field];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  }
+
+  private initUnitMap(container: HTMLDivElement) {
+    const position = this.validCoordinatePair()
+      ? [this.latitude()!, this.longitude()!] as [number, number]
+      : this.DEFAULT_MAP_CENTER;
+    this.unitMap = L.map(container, { center: position, zoom: 15, zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+    }).addTo(this.unitMap);
+
+    if (this.validCoordinatePair()) this.syncMapMarker();
+    this.unitMap.on('click', (event: L.LeafletMouseEvent) => {
+      this.applyMapPosition(event.latlng.lat, event.latlng.lng);
+    });
+    setTimeout(() => this.unitMap?.invalidateSize(), 200);
+  }
+
+  private validCoordinatePair(): boolean {
+    const latitude = this.latitude();
+    const longitude = this.longitude();
+    return latitude !== null
+      && longitude !== null
+      && latitude >= -90
+      && latitude <= 90
+      && longitude >= -180
+      && longitude <= 180;
+  }
+
+  private syncMapMarker(center = false) {
+    if (!this.unitMap) return;
+    if (!this.validCoordinatePair()) {
+      this.unitMarker?.remove();
+      this.unitMarker = undefined;
+      return;
+    }
+
+    const latitude = this.latitude()!;
+    const longitude = this.longitude()!;
+    if (!this.unitMarker) {
+      const markerIcon = L.icon({
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+      this.unitMarker = L.marker([latitude, longitude], { draggable: true, icon: markerIcon })
+        .addTo(this.unitMap)
+        .on('dragend', () => {
+          const position = this.unitMarker!.getLatLng();
+          this.applyMapPosition(position.lat, position.lng);
+        });
+    } else {
+      this.unitMarker.setLatLng([latitude, longitude]);
+    }
+    if (center) this.unitMap.setView([latitude, longitude], this.unitMap.getZoom());
+  }
+
+  private applyMapPosition(latitude: number, longitude: number, center = false) {
+    this.latitude.set(latitude);
+    this.longitude.set(longitude);
+    this.locationMessage.set(null);
+    this.syncMapMarker(center);
   }
 }

@@ -68,5 +68,70 @@ describe('UnitDetailComponent', () => {
 
     expect(getApiUnit.calls.allArgs()).toEqual([['city-1'], ['city-2']]);
     expect(fixture.nativeElement.textContent).toContain('Bobo-Dioulasso');
+    expect(fixture.nativeElement.querySelector('.unit-location-map')).toBeNull();
+  });
+
+  it('shows the location map when both coordinates are available', async () => {
+    getApiUnit.and.callFake((id: string) => ({
+      ...makeUnit(id, 'Ouagadougou'),
+      metadata: { latitude: 12.3714, longitude: -1.5197 },
+    }));
+
+    routeIds.next(convertToParamMap({ id: 'city-with-coordinates' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.unit-location-map')).not.toBeNull();
+    const googleMapsLink = fixture.nativeElement.querySelector('.coordinates-map-section a') as HTMLAnchorElement;
+    expect(googleMapsLink.href).toBe(
+      'https://www.google.com/maps/search/?api=1&query=12.3714,-1.5197',
+    );
+    expect(googleMapsLink.target).toBe('_blank');
+  });
+
+  it('does not show a zero-subdivision message for a neighborhood', async () => {
+    getApiUnit.and.callFake((id: string) => ({
+      ...makeUnit(id, 'Wemtenga'),
+      type_code: 'NEIGHBORHOOD',
+    }));
+
+    routeIds.next(convertToParamMap({ id: 'neighborhood-1' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('subdivision(s) directe(s)');
+    expect(fixture.nativeElement.querySelector('.no-children')).toBeNull();
+  });
+
+  it('does not show a child count beside a neighborhood in the parent tree', async () => {
+    const sector: TerritorialUnit = {
+      ...makeUnit('sector-1', 'Secteur 1'),
+      type_code: 'SECTOR',
+    };
+    const neighborhood: TerritorialUnit = {
+      ...makeUnit('neighborhood-1', 'Bilbalogo'),
+      type_code: 'NEIGHBORHOOD',
+      parent_id: sector.id,
+    };
+    getApiUnit.and.callFake((id: string) => id === sector.id ? sector : neighborhood);
+
+    routeIds.next(convertToParamMap({ id: sector.id }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    component.children.set([neighborhood]);
+    component.tree.set({
+      unit: sector,
+      expanded: true,
+      children: [{ unit: neighborhood, children: [], expanded: false }],
+    });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Bilbalogo');
+    expect(fixture.nativeElement.querySelector('.tree-item .tree-count')).toBeNull();
   });
 });

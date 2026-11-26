@@ -148,7 +148,7 @@ export class TerritoryHttpService {
   }
 
   /** `latitude`/`longitude` requis côté backend à la création (controllers/territory.controller.js). */
-  createNeighborhood(data: { name: string; sectorId?: string; arrondissementId?: string; cityId?: string; latitude?: number; longitude?: number }): Observable<Quartier> {
+  createNeighborhood(data: { name: string; sectorId?: string; arrondissementId?: string; cityId?: string; latitude: number; longitude: number }): Observable<Quartier> {
     return this.http.post<Quartier>(`${this.api}/neighborhoods`, data).pipe(map(normalizeId));
   }
 

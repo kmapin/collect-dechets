@@ -1,8 +1,9 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, map } from 'rxjs';
+import * as L from 'leaflet';
 import { TerritoryService } from '../services/territory.service';
 import { TerritorialUnit, TYPE_LABELS } from '../models/models';
 import { PageHeaderComponent } from '../../../shared/decoupage-territorial/page-header.component';
@@ -25,9 +26,22 @@ interface TreeNode {
   templateUrl: './unit-detail.component.html',
   styleUrl: './unit-detail.component.scss',
 })
-export class UnitDetailComponent implements OnInit {
+export class UnitDetailComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private loadSequence = 0;
+  private locationMap?: L.Map;
+  private locationMarker?: L.Marker;
+  private locationMapContainer?: HTMLDivElement;
+
+  @ViewChild('unitLocationMap') set unitLocationMapEl(el: ElementRef<HTMLDivElement> | undefined) {
+    if (el) {
+      this.locationMapContainer = el.nativeElement;
+      this.syncLocationMap(this.unit());
+    } else {
+      this.locationMapContainer = undefined;
+      this.destroyLocationMap();
+    }
+  }
 
   unit = signal<TerritorialUnit | null>(null);
   ancestors = signal<TerritorialUnit[]>([]);
@@ -55,6 +69,10 @@ export class UnitDetailComponent implements OnInit {
       .subscribe((id) => void this.load(id));
   }
 
+  ngOnDestroy() {
+    this.destroyLocationMap();
+  }
+
   async load(id: string) {
     const sequence = ++this.loadSequence;
     this.loading.set(true);
@@ -74,6 +92,7 @@ export class UnitDetailComponent implements OnInit {
         return;
       }
       this.unit.set(unit);
+      this.syncLocationMap(unit);
       this.ancestors.set(this.territory.getApiAncestors(unit));
       this.children.set(this.territory.getApiChildren(id));
 
@@ -140,4 +159,77 @@ export class UnitDetailComponent implements OnInit {
   }
 
   fmt = formatDate;
+
+  coordinatesFor(unit: TerritorialUnit | null): { latitude: number; longitude: number } | null {
+    if (!unit) return null;
+    const latitude = unit.metadata['latitude'];
+    const longitude = unit.metadata['longitude'];
+    if (
+      typeof latitude !== 'number'
+      || !Number.isFinite(latitude)
+      || latitude < -90
+      || latitude > 90
+      || typeof longitude !== 'number'
+      || !Number.isFinite(longitude)
+      || longitude < -180
+      || longitude > 180
+    ) {
+      return null;
+    }
+    return { latitude, longitude };
+  }
+
+  googleMapsUrl(coordinates: { latitude: number; longitude: number }): string {
+    return `https://www.google.com/maps/search/?api=1&query=${coordinates.latitude},${coordinates.longitude}`;
+  }
+
+  private syncLocationMap(unit: TerritorialUnit | null) {
+    const coordinates = this.coordinatesFor(unit);
+    if (!coordinates || !this.locationMapContainer) return;
+    if (!this.locationMap) {
+      this.initLocationMap(this.locationMapContainer, coordinates);
+      return;
+    }
+
+    this.locationMarker?.setLatLng([coordinates.latitude, coordinates.longitude]);
+    this.locationMap.setView(
+      [coordinates.latitude, coordinates.longitude],
+      this.locationMap.getZoom(),
+    );
+  }
+
+  private initLocationMap(
+    container: HTMLDivElement,
+    coordinates: { latitude: number; longitude: number },
+  ) {
+    this.locationMap = L.map(container, {
+      center: [coordinates.latitude, coordinates.longitude],
+      zoom: 15,
+      zoomControl: true,
+    });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+    }).addTo(this.locationMap);
+    const markerIcon = L.icon({
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+    this.locationMarker = L.marker(
+      [coordinates.latitude, coordinates.longitude],
+      { icon: markerIcon },
+    ).addTo(this.locationMap);
+    setTimeout(() => this.locationMap?.invalidateSize(), 200);
+  }
+
+  private destroyLocationMap() {
+    this.locationMap?.remove();
+    this.locationMap = undefined;
+    this.locationMarker = undefined;
+  }
 }

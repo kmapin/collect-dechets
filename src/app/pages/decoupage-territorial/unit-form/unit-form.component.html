@@ -63,6 +63,63 @@
         <span class="hint">Le nom est conservé tel que fourni. La comparaison ignore la casse et les accents.</span>
       </div>
 
+      <div class="form-field">
+        <label>Coordonnées géographiques
+          @if (selectedType === 'NEIGHBORHOOD') {
+            <span class="required">*</span>
+          } @else {
+            <span class="hint">(facultatives)</span>
+          }
+        </label>
+        <div class="coordinates-row">
+          <div class="form-field">
+            <label for="unit-latitude">Latitude</label>
+            <input
+              id="unit-latitude"
+              type="number"
+              step="any"
+              min="-90"
+              max="90"
+              [required]="selectedType === 'NEIGHBORHOOD'"
+              [value]="latitude() ?? ''"
+              (input)="setCoordinate('latitude', $any($event.target).value)"
+              placeholder="Ex. : 12.3714"
+            />
+          </div>
+          <div class="form-field">
+            <label for="unit-longitude">Longitude</label>
+            <input
+              id="unit-longitude"
+              type="number"
+              step="any"
+              min="-180"
+              max="180"
+              [required]="selectedType === 'NEIGHBORHOOD'"
+              [value]="longitude() ?? ''"
+              (input)="setCoordinate('longitude', $any($event.target).value)"
+              placeholder="Ex. : -1.5197"
+            />
+          </div>
+        </div>
+        <span class="hint">Saisissez des degrés décimaux. Les deux valeurs doivent être renseignées ensemble.</span>
+        <p class="hint">Cliquez sur la carte ou déplacez le repère pour choisir la position. Vous pouvez aussi utiliser la géolocalisation de votre appareil.</p>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="isLocating()"
+          (click)="useMyLocation()"
+        >
+          {{ isLocating() ? 'Localisation…' : 'Utiliser ma position actuelle' }}
+        </button>
+        <div #unitMapEl class="unit-map" role="region" aria-label="Carte pour sélectionner les coordonnées de l’unité"></div>
+        @if (latitude() !== null && longitude() !== null) {
+          <span class="hint">Coordonnées sélectionnées : {{ latitude() }}, {{ longitude() }}</span>
+        }
+        @if (locationMessage()) {
+          <span class="hint" role="status">{{ locationMessage() }}</span>
+        }
+      </div>
+
       @if (selectedType === 'COUNTRY') {
         <div class="form-field">
           <label>Code territorial (facultatif)</label>

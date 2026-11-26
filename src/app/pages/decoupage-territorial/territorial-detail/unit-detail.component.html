@@ -48,16 +48,49 @@
               </dd>
             </div>
             <div><dt>Code facultatif</dt><dd>{{ u.code || '—' }}</dd></div>
+            <div>
+              <dt>Coordonnées</dt>
+              <dd>
+                @if (coordinatesFor(u); as coordinates) {
+                  Latitude : {{ coordinates.latitude }} · Longitude : {{ coordinates.longitude }}
+                } @else {
+                  Non renseignées
+                }
+              </dd>
+            </div>
             <div><dt>Statut</dt><dd><app-status-pill [active]="u.active" /></dd></div>
             <div><dt>Créé le</dt><dd>{{ fmt(u.created_at) }}</dd></div>
             <div><dt>Modifié le</dt><dd>{{ fmt(u.updated_at) }}</dd></div>
           </dl>
+          @if (coordinatesFor(u); as coordinates) {
+            <section class="coordinates-map-section">
+              <div class="coordinates-map-heading">
+                <h4>Position exacte</h4>
+                <a
+                  class="btn btn-secondary"
+                  [href]="googleMapsUrl(coordinates)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Voir sur Google Maps
+                </a>
+              </div>
+              <div
+                #unitLocationMap
+                class="unit-location-map"
+                role="region"
+                aria-label="Carte indiquant la position exacte de l’unité"
+              ></div>
+            </section>
+          }
         </div>
 
         <div class="card tree-card">
           <div class="card-header">
             <h3>Arborescence</h3>
-            <span class="chip">{{ children().length }} subdivision(s) directe(s)</span>
+            @if (u.type_code !== 'NEIGHBORHOOD') {
+              <span class="chip">{{ children().length }} subdivision(s) directe(s)</span>
+            }
           </div>
 
           @if (tree(); as root) {
@@ -81,7 +114,9 @@
                   <a [routerLink]="['/territorial/units', node.unit.id]" class="tree-link">{{ node.unit.name }}</a>
                   <app-type-badge [typeCode]="node.unit.type_code" [label]="TYPE_LABELS[node.unit.type_code] || node.unit.type_code" />
                   <app-status-pill [active]="node.unit.active" />
-                  <span class="tree-count">{{ node.children.length }}</span>
+                  @if (node.unit.type_code !== 'NEIGHBORHOOD') {
+                    <span class="tree-count">{{ node.children.length }}</span>
+                  }
                 </div>
                 @if (node.expanded) {
                   <div class="tree-children">
@@ -94,7 +129,7 @@
             </div>
           }
 
-          @if (children().length === 0) {
+          @if (children().length === 0 && u.type_code !== 'NEIGHBORHOOD') {
             <div class="no-children">
               <p class="muted">Aucune subdivision directe.</p>
             </div>

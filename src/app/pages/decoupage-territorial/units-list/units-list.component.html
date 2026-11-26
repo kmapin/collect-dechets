@@ -87,7 +87,13 @@
                 <app-type-badge [typeCode]="u.type_code" [label]="typeLabel[u.type_code] || u.type_code" />
               </td>
               <td class="muted">{{ u.metadata['country_name'] || '—' }}</td>
-              <td class="num-col">{{ territory.getApiChildren(u.id).length }}</td>
+              <td class="num-col">
+                @if (u.type_code === 'NEIGHBORHOOD') {
+                  —
+                } @else {
+                  {{ territory.getApiChildren(u.id).length }}
+                }
+              </td>
               <td>
                 <app-status-pill [active]="u.active" />
               </td>
