@@ -13,6 +13,7 @@ import { TerritoryHttpService } from '../../../services/territory-http.service';
 import { Arrondissement, City, Country, Quartier, Sector } from '../../../models/countries-org.model';
 import { PhoneInputDirective } from '../../../shared/phone-input.directive';
 import { TerritorySelectComponent, toTerritoryOptions, toTerritoryOptionsById } from '../../../shared/territory-select/territory-select';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-register',
@@ -32,7 +33,7 @@ export class Register implements OnInit {
     password: '',
     confirmPassword: '',
     isOwnerAgency: false,
-    status:'',
+    status: '',
     address: {
       arrondissement: '',
       sector: '',
@@ -56,7 +57,7 @@ export class Register implements OnInit {
       region: '',
       province: ''
     },
-    agency : {
+    agency: {
       name: '',
       agencyDescription: '',
       zoneActivite: [],
@@ -139,7 +140,7 @@ export class Register implements OnInit {
   }
 
   get citiesForSelectedCountry(): City[] {
-    return this.cities.filter((city) => city.country?.id === this.selectedCountryId);
+    return this.cities.filter((city) => String(city.countryId) === String(this.selectedCountryId));
   }
 
   get progressPercent(): number {
@@ -160,9 +161,17 @@ export class Register implements OnInit {
 
   onCountryChange(countryId: string | number | null): void {
     this.selectedCountryId = countryId === null ? '' : String(countryId);
+
+    this.territoryRequestId++;
+
     this.userData.address.city = '';
+    this.userData.address.arrondissement = '';
+    this.userData.address.sector = '';
+    this.userData.address.neighborhood = '';
+
     this.clearStepFieldError('country');
     this.clearStepFieldError('city');
+
     this.chargerTerritoireVille('', false);
   }
 
@@ -409,7 +418,7 @@ export class Register implements OnInit {
   }
   onRegister(): void {
     if (this.isLoading || this.currentStep !== this.steps.length) return;
-    
+
     // Clear previous errors
     this.validationErrors = {};
     this.generalError = '';
@@ -495,12 +504,12 @@ export class Register implements OnInit {
           ...this.getQuartierCoordinates(),
         },
         // Agency-specific data - ensure they are always included for agency role
-   
+
         agency: {
           name: this.userData.agencyName,
           agencyDescription: this.userData.agencyDescription,
           zoneActivite: [],
-          client: '' ,
+          client: '',
           collector: '',
           slogan: this.userData.slogan,
           gestionnaires: [],
@@ -519,7 +528,7 @@ export class Register implements OnInit {
 
           if (isSuccess) {
             this.notificationService.showSuccess('Inscription agence réussie',
-           'Votre agence a été créée avec succès ! Veuillez patienter pendant que l’administrateur active votre compte avant de pouvoir vous connecter.');
+              'Votre agence a été créée avec succès ! Veuillez patienter pendant que l’administrateur active votre compte avant de pouvoir vous connecter.');
             setTimeout(() => {
               this.router.navigate(['/login']);
             }, 2000);
@@ -534,7 +543,7 @@ export class Register implements OnInit {
       });
       return;
     } else if (this.userData.role === UserRole.MUNICIPALITY) {
-      const body : RegisterUserData = {
+      const body: RegisterUserData = {
         firstName: this.userData.firstName,
         lastName: this.userData.lastName,
         email: this.userData.email,
@@ -569,7 +578,7 @@ export class Register implements OnInit {
             (typeof response.message === 'string' && (
               response.message.toLowerCase().includes('succès') ||
               response.message.toLowerCase().includes('réussi')
-            )) 
+            ))
 
           if (isSuccess) {
             this.notificationService.showSuccess('Inscription mairie réussie',
@@ -710,11 +719,17 @@ export class Register implements OnInit {
     };
   }
 
-  onCityChange(value: string | number | null) {
+  onCityChange(value: string | number | null): void {
     const city = value === null ? '' : String(value);
     this.userData.address.city = city;
-    const cityObj = this.cities.find((item) => item.name === city);
-    if (cityObj?.country?.id) this.selectedCountryId = cityObj.country.id;
+    const cityObj = this.cities.find(
+      (item) =>
+        item.name === city &&
+        item.countryId === this.selectedCountryId
+    );
+    if (cityObj?.countryId) {
+      this.selectedCountryId = String(cityObj.countryId);
+    }
     this.clearError();
     this.clearStepFieldError('city');
     this.chargerTerritoireVille(city, false);
@@ -739,7 +754,7 @@ export class Register implements OnInit {
     this.isLoadingQuartiers = false;
     if (!city) return;
 
-    const cityObj = this.cities.find(c => c.name === city);
+    const cityObj = this.cities.find(c => c.name === city && c.countryId === this.selectedCountryId);
     if (!cityObj?.id) {
       this.userData.address.arrondissement = '';
       this.userData.address.sector = '';
@@ -1057,21 +1072,34 @@ export class Register implements OnInit {
     return this.validationErrors[fieldName] && this.validationErrors[fieldName].length > 0;
   }
 
-  getAllCountries() {
+  getAllCountries(): void {
     this.isLoadingCities = true;
-    this.territoryService.getAllCities().subscribe({
-      next: (cities) => {
+    this.territoryError = '';
+
+    forkJoin({
+      countries: this.territoryService.getCountries(),
+      cities: this.territoryService.getAllCities()
+    }).subscribe({
+      next: ({ countries, cities }) => {
         this.cities = cities;
-        const countriesById = new Map<string, Country>();
-        cities.forEach((city) => {
-          if (city.country?.id) countriesById.set(city.country.id, city.country);
-        });
-        this.countries = [...countriesById.values()];
+        this.countries = countries;
+
+        console.log('cities ===>', this.cities);
+        console.log('countries ===>', this.countries);
+
         this.isLoadingCities = false;
+
         if (this.userData.address.city) {
-          const city = this.cities.find((item) => item.name === this.userData.address.city);
-          this.selectedCountryId = city?.country?.id ?? '';
-          this.chargerTerritoireVille(this.userData.address.city, true);
+          const city = this.cities.find(
+            (item) => item.name === this.userData.address.city
+          );
+
+          this.selectedCountryId = city?.countryId ?? '';
+
+          this.chargerTerritoireVille(
+            this.userData.address.city,
+            true
+          );
         }
       },
       error: () => {
@@ -1079,8 +1107,37 @@ export class Register implements OnInit {
         this.countries = [];
         this.selectedCountryId = '';
         this.isLoadingCities = false;
-        this.territoryError = 'Impossible de charger la liste des villes.';
+        this.territoryError =
+          'Impossible de charger la liste des pays et des villes.';
       },
     });
   }
+
+  // getAllCountries() {
+  //   this.isLoadingCities = true;
+  //   this.territoryService.getAllCities().subscribe({
+  //     next: (cities) => {
+  //       this.cities = cities;
+  //       console.log("cities===>", this.cities);
+  //       const countriesById = new Map<string, Country>();
+  //       cities.forEach((city) => {
+  //         if (city.country?.id || city.countryId) countriesById.set(city.country.id, city.country);
+  //       });
+  //       this.countries = [...countriesById.values()];
+  //       this.isLoadingCities = false;
+  //       if (this.userData.address.city) {
+  //         const city = this.cities.find((item) => item.name === this.userData.address.city);
+  //         this.selectedCountryId = city?.country?.id ?? '';
+  //         this.chargerTerritoireVille(this.userData.address.city, true);
+  //       }
+  //     },
+  //     error: () => {
+  //       this.cities = [];
+  //       this.countries = [];
+  //       this.selectedCountryId = '';
+  //       this.isLoadingCities = false;
+  //       this.territoryError = 'Impossible de charger la liste des villes.';
+  //     },
+  //   });
+  // }
 }

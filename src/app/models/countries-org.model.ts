@@ -13,6 +13,7 @@ export interface City {
     name: string;
     code?: string;
     country: Country;
+    countryId? : string;
     isArrondissement?: boolean;
     latitude?: number;
     longitude?: number;
