@@ -37,6 +37,8 @@ export function toTerritoryOptionsById(items: Array<{ id: string | number; name:
 export class TerritorySelectComponent {
   @Input() options: TerritoryOption[] = [];
   @Input() value: string | number | null = null;
+  @Input() inputId = '';
+  @Input() ariaLabel = '';
   @Input() placeholder = 'Rechercher…';
   @Input() disabled = false;
   @Input() appearance: 'compact' | 'form' = 'compact';

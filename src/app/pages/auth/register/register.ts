@@ -2,7 +2,7 @@ import { stamp } from './../../../../../node_modules/@types/leaflet/index.d';
 import { Component, OnInit } from '@angular/core';
 
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 import { UserRole, RegisterUserData, RegisterResponse } from '../../../models/user.model';
@@ -10,9 +10,9 @@ import { Agency } from '../../../models/agency.model';
 import { Admin } from '../../../services/admin';
 import { AgencyService } from '../../../services/agency.service';
 import { TerritoryHttpService } from '../../../services/territory-http.service';
-import { Arrondissement, City, Quartier, Sector } from '../../../models/countries-org.model';
+import { Arrondissement, City, Country, Quartier, Sector } from '../../../models/countries-org.model';
 import { PhoneInputDirective } from '../../../shared/phone-input.directive';
-import { TerritorySelectComponent, toTerritoryOptions } from '../../../shared/territory-select/territory-select';
+import { TerritorySelectComponent, toTerritoryOptions, toTerritoryOptionsById } from '../../../shared/territory-select/territory-select';
 
 @Component({
   selector: 'app-register',
@@ -49,7 +49,7 @@ export class Register implements OnInit {
     slogan: '',
     agencyDescription: '',
     termsAccepted: false,
-    acceptTerms: true,
+    acceptTerms: false,
     receiveOffers: false,
     commune: {
       name: '',
@@ -82,9 +82,12 @@ export class Register implements OnInit {
 
 
   readonly toTerritoryOptions = toTerritoryOptions;
+  readonly toTerritoryOptionsById = toTerritoryOptionsById;
 
   arrondissementss: Arrondissement[] = [];
   cities: City[] = [];
+  countries: Country[] = [];
+  selectedCountryId = '';
   secteurss: Sector[] = [];
   secteurs: { secteur: string; quartiers: string[] }[] = [];
   quartiers: string[] = [];
@@ -98,6 +101,15 @@ export class Register implements OnInit {
   isLoadingQuartiers = false;
   territoryError = '';
   private territoryRequestId = 0;
+  currentStep = 1;
+  readonly steps = [
+    { number: 1, title: 'Type de compte' },
+    { number: 2, title: 'Informations personnelles' },
+    { number: 3, title: 'Adresse de localisation' },
+    { number: 4, title: 'Sécurité et conditions' },
+  ];
+  stepError = '';
+  stepFieldErrors: Record<string, string> = {};
 
   // Error handling properties
   validationErrors: { [key: string]: string[] } = {};
@@ -121,12 +133,165 @@ export class Register implements OnInit {
     if (this.agencyId) {
       this.loadAgencyFromApi(this.agencyId);
     }
-    console.log("L'id de l'agence est ", this.agencyId);
     // this.roleMunicipality = this.adminService.getData()?.userRole || '';
     this.roleMunicipality = localStorage.getItem('userRole') || '';
-    if (this.roleMunicipality === 'municipality') this.userData.role = UserRole.MUNICIPALITY
-    console.log(this.roleMunicipality);
+    if (this.roleMunicipality === 'municipality') this.userData.role = UserRole.MUNICIPALITY;
+  }
 
+  get citiesForSelectedCountry(): City[] {
+    return this.cities.filter((city) => city.country?.id === this.selectedCountryId);
+  }
+
+  get progressPercent(): number {
+    return (this.currentStep / this.steps.length) * 100;
+  }
+
+  get currentStepTitle(): string {
+    return this.steps[this.currentStep - 1]?.title ?? this.steps[0].title;
+  }
+
+  get isEditingAccount(): boolean {
+    return Boolean(this.agencyId);
+  }
+
+  get isMunicipalityRegistration(): boolean {
+    return this.userData.role === UserRole.MUNICIPALITY;
+  }
+
+  onCountryChange(countryId: string | number | null): void {
+    this.selectedCountryId = countryId === null ? '' : String(countryId);
+    this.userData.address.city = '';
+    this.clearStepFieldError('country');
+    this.clearStepFieldError('city');
+    this.chargerTerritoireVille('', false);
+  }
+
+  nextStep(form: NgForm): void {
+    if (this.currentStep >= this.steps.length || this.isLoading) return;
+    this.markCurrentStepTouched(form);
+    this.stepFieldErrors = {};
+    this.stepError = '';
+
+    if (!this.validateCurrentStep(form)) return;
+    this.currentStep += 1;
+  }
+
+  previousStep(): void {
+    if (this.currentStep <= 1 || this.isLoading) return;
+    this.currentStep -= 1;
+    this.stepFieldErrors = {};
+    this.stepError = '';
+  }
+
+  submitCurrentStep(form: NgForm): void {
+    if (this.currentStep < this.steps.length) {
+      this.nextStep(form);
+      return;
+    }
+
+    if (this.isLoading) return;
+    this.markCurrentStepTouched(form);
+    this.stepFieldErrors = {};
+    this.stepError = '';
+    if (!this.validateCurrentStep(form)) return;
+    this.onRegister();
+  }
+
+  private markCurrentStepTouched(form: NgForm): void {
+    Object.values(form.controls).forEach((control) => control.markAsTouched());
+  }
+
+  private validateCurrentStep(form: NgForm): boolean {
+    let valid = form.valid === true;
+
+    if (this.currentStep === 1) {
+      if (!this.userData.role) {
+        this.stepFieldErrors['role'] = 'Veuillez choisir un type de compte.';
+        valid = false;
+      }
+    } else if (this.currentStep === 2) {
+      if (!this.userData.firstName.trim()) {
+        this.stepFieldErrors['firstName'] = 'Le prénom est requis.';
+        valid = false;
+      }
+      if (!this.userData.lastName.trim()) {
+        this.stepFieldErrors['lastName'] = 'Le nom est requis.';
+        valid = false;
+      }
+      if (!this.userData.phone.trim()) {
+        this.stepFieldErrors['phone'] = 'Le numéro de téléphone est requis.';
+        valid = false;
+      }
+      if (this.userData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.userData.email)) {
+        this.stepFieldErrors['email'] = 'Veuillez saisir une adresse email valide.';
+        valid = false;
+      }
+      if (this.userData.role === UserRole.MANAGER) {
+        if (!this.userData.agencyName.trim()) {
+          this.stepFieldErrors['agencyName'] = 'Le nom de l’agence est requis.';
+          valid = false;
+        }
+        if (!this.userData.agencyDescription.trim()) {
+          this.stepFieldErrors['agencyDescription'] = 'La description de l’agence est requise.';
+          valid = false;
+        }
+        if (!this.userData.slogan.trim()) {
+          this.stepFieldErrors['slogan'] = 'Le slogan de l’agence est requis.';
+          valid = false;
+        }
+      }
+    } else if (this.currentStep === 3) {
+      if (!this.countries.some((country) => country.id === this.selectedCountryId)) {
+        this.stepFieldErrors['country'] = 'Veuillez sélectionner un pays.';
+        valid = false;
+      }
+      const city = this.citiesForSelectedCountry.find((item) => item.name === this.userData.address.city);
+      if (!city) {
+        this.stepFieldErrors['city'] = 'Veuillez sélectionner une ville disponible dans ce pays.';
+        valid = false;
+      }
+      if (this.territoryError) {
+        this.stepFieldErrors['city'] = this.territoryError;
+        valid = false;
+      }
+      if (this.isLoadingArrondissements || this.isLoadingSecteurs || this.isLoadingQuartiers) {
+        this.stepFieldErrors['city'] = 'Veuillez attendre le chargement du découpage territorial.';
+        valid = false;
+      }
+      if (this.arrondissementss.length && !this.arrondissementss.some((item) => item.name === this.userData.address.arrondissement)) {
+        this.stepFieldErrors['arrondissement'] = 'Veuillez sélectionner un arrondissement.';
+        valid = false;
+      }
+      if (this.secteurss.length && !this.secteurss.some((item) => item.name === this.userData.address.sector)) {
+        this.stepFieldErrors['sector'] = 'Veuillez sélectionner un secteur.';
+        valid = false;
+      }
+      if (this.quartierss.length && !this.quartierss.some((item) => item.name === this.userData.address.neighborhood)) {
+        this.stepFieldErrors['neighborhood'] = 'Veuillez sélectionner un quartier.';
+        valid = false;
+      }
+    } else if (this.currentStep === 4 && !this.agencyId) {
+      if (this.userData.password.length < 8) {
+        this.stepFieldErrors['password'] = 'Le mot de passe doit contenir au moins 8 caractères.';
+        valid = false;
+      }
+      if (!this.userData.confirmPassword || this.userData.password !== this.userData.confirmPassword) {
+        this.stepFieldErrors['confirmPassword'] = 'Les mots de passe ne correspondent pas.';
+        valid = false;
+      }
+      if (!this.userData.acceptTerms) {
+        this.stepFieldErrors['acceptTerms'] = 'Vous devez accepter les conditions d’utilisation.';
+        valid = false;
+      }
+    }
+
+    if (!valid) this.stepError = 'Vérifiez les champs signalés avant de continuer.';
+    return valid;
+  }
+
+  clearStepFieldError(field: string): void {
+    delete this.stepFieldErrors[field];
+    this.stepError = '';
   }
   clearError(): void {
     this.generalError = '';
@@ -157,9 +322,7 @@ export class Register implements OnInit {
   loadAgencyFromApi(id: string | null): void {
     this.agencyService.getAgencyByIdFromApi(id).subscribe((response: any) => {
       if (response.success && response.data) {
-        console.log('[DEBUG] Agency data:', response);
         this.agency = this.mapApiAgency(response.data);
-        console.log('[DEBUG] Agency details:', this.agency);
         this.userData._id = this.agency._id;
         this.userData.role = this.agency.role;
         this.userData.firstName = this.agency.firstName;
@@ -178,6 +341,7 @@ export class Register implements OnInit {
         this.userData.address.city = this.agency.address.city;
         this.userData.address.postalCode = this.agency.address.postalCode;
         if (this.cities.length && this.userData.address.city) {
+          this.selectedCountryId = this.cities.find((city) => city.name === this.userData.address.city)?.country?.id ?? '';
           this.chargerTerritoireVille(this.userData.address.city, true);
         }
 
@@ -186,7 +350,6 @@ export class Register implements OnInit {
 
 
       } else {
-        console.error('Erreur lors du chargement de l\'agence');
         // Fallback vers les données mockées si l'API échoue
         this.agencyService.getAgencyById(id).subscribe(agency => {
           this.agency = agency || null;
@@ -235,22 +398,6 @@ export class Register implements OnInit {
       __v: apiAgency.__v || 0
     };
   }
-  testButton(): void {
-    console.log('[DEBUG] Test button clicked!');
-    console.log('[DEBUG] isLoading:', this.isLoading);
-    console.log('[DEBUG] acceptTerms:', this.userData.acceptTerms);
-    console.log('[DEBUG] password match:', this.userData.password === this.userData.confirmPassword);
-    console.log('[DEBUG] userData:', this.userData);
-  }
-
-  isButtonDisabled(): boolean {
-    const disabled = this.isLoading || !this.userData.acceptTerms || this.userData.password !== this.userData.confirmPassword;
-    console.log('[DEBUG] Button disabled:', disabled);
-    console.log('[DEBUG] - isLoading:', this.isLoading);
-    console.log('[DEBUG] - acceptTerms:', this.userData.acceptTerms);
-    console.log('[DEBUG] - password match:', this.userData.password === this.userData.confirmPassword);
-    return disabled;
-  }
   formatPhone(phone: any): string {
     if (!phone) return '';
 
@@ -261,22 +408,15 @@ export class Register implements OnInit {
       .replace(/^\+?(226|225)?/, '');
   }
   onRegister(): void {
-    if (this.isLoading) return;
-    console.log('[DEBUG] onRegister() appelée');
-    console.log('[DEBUG] Données utilisateur:', this.userData);
-    console.log('[DEBUG] isLoading:', this.isLoading);
-    console.log('[DEBUG] acceptTerms:', this.userData.acceptTerms);
+    if (this.isLoading || this.currentStep !== this.steps.length) return;
     
     // Clear previous errors
     this.validationErrors = {};
     this.generalError = '';
 
     if (!this.validateForm()) {
-      console.log('[DEBUG] Validation échouée');
       return;
     }
-
-    console.log('[DEBUG] Validation réussie, démarrage inscription...');
 
     this.isLoading = true;
 
@@ -305,12 +445,9 @@ export class Register implements OnInit {
         ...(this.agencyId && { agencyId: this.agencyId })
       };
 
-      console.log('[DEBUG] Données d\'inscription préparées:', registrationData);
-
       this.authService.register(registrationData).subscribe({
         next: (response: RegisterResponse) => {
           this.isLoading = false;
-          console.log('[DEBUG] Réponse inscription:', response);
 
           if (response.success) {
             this.notificationService.showSuccess(
@@ -321,13 +458,11 @@ export class Register implements OnInit {
               this.router.navigate(['/login']);
             }, 2000);
           } else {
-            console.log(" Error response", response)
             this.handleRegistrationError(response.error, response.message);
           }
         },
         error: (error) => {
           this.isLoading = false;
-          console.error('[DEBUG] Erreur inscription:', error);
           this.handleRegistrationError(error, 'Erreur lors de la communication avec le serveur');
         }
       });
@@ -376,14 +511,9 @@ export class Register implements OnInit {
         }
       };
 
-      console.log('[DEBUG] Données d\'inscription agence préparées:', registrationData);
-      console.log('[DEBUG] agencyName value:', this.userData.agencyName);
-      console.log('[DEBUG] agencyDescription value:', this.userData.agencyDescription);
-
       this.authService.register(registrationData).subscribe({
         next: (response) => {
           this.isLoading = false;
-          console.log('[DEBUG] Réponse inscription agence:', response);
           // Use the unified RegisterResponse structure
           const isSuccess = response.success;
 
@@ -399,7 +529,6 @@ export class Register implements OnInit {
         },
         error: (error) => {
           this.isLoading = false;
-          console.error('[DEBUG] Erreur inscription agence2:', error);
           this.handleRegistrationError(error.error || error.message || error);
         }
       });
@@ -428,13 +557,11 @@ export class Register implements OnInit {
         ...(this.agencyId && { agencyId: this.agencyId })
       };
 
-      console.log('[DEBUG] Body envoyé à registerMunicipality:', body);
       this.authService.register(body).subscribe({
         next: (response) => {
           localStorage.removeItem('userRole');
           this.isLoading = false;
           this.adminService.cleanData();
-          console.log('[DEBUG] Réponse inscription municipal:', response);
           const res: any = response;
           const isSuccess =
             response.success ||
@@ -473,7 +600,11 @@ export class Register implements OnInit {
     }
   }
 
-  onArrondissementChange(arrondissement?: string) {
+  onArrondissementChange(value: string | number | null) {
+    const arrondissement = value === null ? '' : String(value);
+    this.userData.address.arrondissement = arrondissement;
+    this.clearStepFieldError('arrondissement');
+    this.clearError();
     const requestId = ++this.territoryRequestId;
     this.secteurss = [];
     this.quartierss = [];
@@ -528,7 +659,11 @@ export class Register implements OnInit {
     });
   }
 
-  onSecteurChange(secteur: string) {
+  onSecteurChange(value: string | number | null) {
+    const secteur = value === null ? '' : String(value);
+    this.userData.address.sector = secteur;
+    this.clearStepFieldError('sector');
+    this.clearError();
     const requestId = ++this.territoryRequestId;
     this.quartierss = [];
     this.quartiers = [];
@@ -575,7 +710,13 @@ export class Register implements OnInit {
     };
   }
 
-  onCityChange(city: string) {
+  onCityChange(value: string | number | null) {
+    const city = value === null ? '' : String(value);
+    this.userData.address.city = city;
+    const cityObj = this.cities.find((item) => item.name === city);
+    if (cityObj?.country?.id) this.selectedCountryId = cityObj.country.id;
+    this.clearError();
+    this.clearStepFieldError('city');
     this.chargerTerritoireVille(city, false);
   }
 
@@ -795,21 +936,21 @@ export class Register implements OnInit {
       return false;
     }
 
-    // Validation mot de passe
-    if (this.userData.password !== this.userData.confirmPassword) {
-      this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
-      return false;
-    }
+    if (!this.agencyId) {
+      if (this.userData.password !== this.userData.confirmPassword) {
+        this.notificationService.showError('Erreur', 'Les mots de passe ne correspondent pas');
+        return false;
+      }
 
-    if (this.userData.password.length < 8) {
-      this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
-      return false;
-    }
+      if (this.userData.password.length < 8) {
+        this.notificationService.showError('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+        return false;
+      }
 
-    // Validation acceptation des conditions
-    if (!this.userData.acceptTerms) {
-      this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
-      return false;
+      if (!this.userData.acceptTerms) {
+        this.notificationService.showError('Erreur', 'Vous devez accepter les conditions d\'utilisation');
+        return false;
+      }
     }
 
     // Validation spécifique pour les agences
@@ -921,13 +1062,22 @@ export class Register implements OnInit {
     this.territoryService.getAllCities().subscribe({
       next: (cities) => {
         this.cities = cities;
+        const countriesById = new Map<string, Country>();
+        cities.forEach((city) => {
+          if (city.country?.id) countriesById.set(city.country.id, city.country);
+        });
+        this.countries = [...countriesById.values()];
         this.isLoadingCities = false;
         if (this.userData.address.city) {
+          const city = this.cities.find((item) => item.name === this.userData.address.city);
+          this.selectedCountryId = city?.country?.id ?? '';
           this.chargerTerritoireVille(this.userData.address.city, true);
         }
       },
       error: () => {
         this.cities = [];
+        this.countries = [];
+        this.selectedCountryId = '';
         this.isLoadingCities = false;
         this.territoryError = 'Impossible de charger la liste des villes.';
       },

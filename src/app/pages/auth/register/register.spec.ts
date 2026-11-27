@@ -1,18 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NgForm } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { Admin } from '../../../services/admin';
 import { AgencyService } from '../../../services/agency.service';
 import { AuthService } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 import { TerritoryHttpService } from '../../../services/territory-http.service';
 import { Arrondissement, City, Quartier, Sector } from '../../../models/countries-org.model';
+import { RegisterResponse, UserRole } from '../../../models/user.model';
 import { Register } from './register';
 
 describe('Register - adresse de localisation', () => {
   let fixture: ComponentFixture<Register>;
   let component: Register;
   let territoryService: jasmine.SpyObj<TerritoryHttpService>;
+  let authService: jasmine.SpyObj<AuthService>;
 
   const cityA: City = {
     id: 'city-a',
@@ -75,11 +78,13 @@ describe('Register - adresse de localisation', () => {
       of(id === secteurA.id ? [quartierA] : []),
     );
     territoryService.getAllNeighborhoods.and.returnValue(of([]));
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['register']);
+    authService.register.and.returnValue(of({ success: false, error: 'Erreur de test' }));
 
     await TestBed.configureTestingModule({
       imports: [Register],
       providers: [
-        { provide: AuthService, useValue: {} },
+        { provide: AuthService, useValue: authService },
         { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
         { provide: NotificationService, useValue: { showError: jasmine.createSpy('showError') } },
         { provide: Admin, useValue: { cleanData: jasmine.createSpy('cleanData') } },
@@ -92,6 +97,98 @@ describe('Register - adresse de localisation', () => {
     fixture = TestBed.createComponent(Register);
     component = fixture.componentInstance;
     component.ngOnInit();
+  });
+
+  it('avance et recule entre les étapes sans perdre les informations saisies', () => {
+    const form = { controls: {}, valid: true } as NgForm;
+    component.userData.firstName = 'Aïcha';
+    component.userData.lastName = 'Diallo';
+    component.userData.phone = '70123456';
+
+    component.nextStep(form);
+    expect(component.currentStep).toBe(2);
+    component.nextStep(form);
+    expect(component.currentStep).toBe(3);
+
+    component.previousStep();
+    expect(component.currentStep).toBe(2);
+    expect(component.userData.firstName).toBe('Aïcha');
+    expect(component.userData.lastName).toBe('Diallo');
+    expect(component.userData.phone).toBe('70123456');
+  });
+
+  it('bloque la progression et indique les champs requis de l’étape personnelle', () => {
+    const form = { controls: {}, valid: true } as NgForm;
+    component.currentStep = 2;
+
+    component.nextStep(form);
+
+    expect(component.currentStep).toBe(2);
+    expect(component.stepFieldErrors['firstName']).toBeTruthy();
+    expect(component.stepFieldErrors['lastName']).toBeTruthy();
+    expect(component.stepFieldErrors['phone']).toBeTruthy();
+  });
+
+  it('valide les informations propres à une agence avant de poursuivre', () => {
+    const form = { controls: {}, valid: true } as NgForm;
+    component.currentStep = 2;
+    component.userData.role = UserRole.MANAGER;
+    component.userData.firstName = 'Amadou';
+    component.userData.lastName = 'Traoré';
+    component.userData.phone = '70123456';
+
+    component.nextStep(form);
+    expect(component.currentStep).toBe(2);
+    expect(component.stepFieldErrors['agencyName']).toBeTruthy();
+    expect(component.stepFieldErrors['agencyDescription']).toBeTruthy();
+
+    component.userData.agencyName = 'Collecte';
+    component.userData.agencyDescription = 'Collecte des déchets';
+    component.userData.slogan = 'Un quartier plus propre';
+    component.nextStep(form);
+    expect(component.currentStep).toBe(3);
+  });
+
+  it('exige confirmation du mot de passe et acceptation des conditions à la dernière étape', () => {
+    const form = { controls: {}, valid: true } as NgForm;
+    component.currentStep = 4;
+    component.userData.password = 'motdepasse123';
+    component.userData.confirmPassword = 'different123';
+    component.userData.acceptTerms = false;
+
+    component.submitCurrentStep(form);
+
+    expect(component.currentStep).toBe(4);
+    expect(component.stepFieldErrors['confirmPassword']).toBeTruthy();
+    expect(component.stepFieldErrors['acceptTerms']).toBeTruthy();
+    expect(component.isLoading).toBeFalse();
+  });
+
+  it('ne soumet qu’une fois et seulement après validation de la dernière étape', () => {
+    const form = { controls: {}, valid: true } as NgForm;
+    const response = new Subject<RegisterResponse>();
+    authService.register.and.returnValue(response.asObservable());
+    component.userData.firstName = 'Aïcha';
+    component.userData.lastName = 'Diallo';
+    component.userData.phone = '70123456';
+    component.userData.password = 'motdepasse123';
+    component.userData.confirmPassword = 'motdepasse123';
+    component.userData.acceptTerms = true;
+    component.onCityChange(cityC.name);
+    component.currentStep = 3;
+
+    component.onRegister();
+    expect(authService.register).not.toHaveBeenCalled();
+
+    component.currentStep = 4;
+    component.submitCurrentStep(form);
+    component.submitCurrentStep(form);
+
+    expect(authService.register).toHaveBeenCalledTimes(1);
+    expect(component.isLoading).toBeTrue();
+    response.next({ success: false, error: 'Erreur de test' });
+    response.complete();
+    expect(component.isLoading).toBeFalse();
   });
 
   it('charge la hiérarchie Ville → Arrondissement → Secteur → Quartier', () => {

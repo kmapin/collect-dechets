@@ -231,18 +231,14 @@ export class AuthService {
 
   
     const registrationData = this.prepareRegistrationData(userData);
-    console.log('[DEBUG] Final registration data being sent to backend:', registrationData);
-    console.log('[DEBUG] Registration endpoint:', `${environment.apiUrl}/auth/register`);
 
     return this.http.post<any>(`${environment.apiUrl}/register`, registrationData).pipe(
       map(response => {
-        console.log("API > Register Response:", response);
         
         if (response && (response.user || response.success)) {
           const user = response.user || response;
           this.currentUser$.subscribe((user: RegisterUserData | null) => {
             this.currentUser = user;
-            console.log('[DEBUG] Connected currentUser:', this.currentUser);
             // if (!this.currentUser && this.currentUser===null ) {
             //   localStorage.setItem('currentUser', JSON.stringify({ user }));
             //   this.currentUserSubject.next(user);
@@ -262,7 +258,6 @@ export class AuthService {
         }
       }),
       catchError((error: HttpErrorResponse) => {
-        console.error('Registration Error:', error);
         return of(this.handleRegistrationError(error.error));
       })
     );
@@ -520,7 +515,6 @@ export class AuthService {
    * Prepares registration data in the format expected by the backend
    */
   public prepareRegistrationData(userData: RegisterUserData): any {
-    console.log('[DEBUG] prepareRegistrationData called with:', userData);
     const baseData = {
       firstName: userData.firstName,
       lastName: userData.lastName,
@@ -549,7 +543,6 @@ export class AuthService {
 
     // Add agency-specific data if role is agency
     if (userData.role === 'manager') {
-      console.log('[DEBUG] Agency role detected, agencyName:', userData.agencyName, 'agencyDescription:', userData.agencyDescription);
       const agencyData = 
       {
         ...baseData,
@@ -569,7 +562,6 @@ export class AuthService {
           latitude: userData?.address.latitude || 0
         }
       };
-      console.log('[DEBUG] Final agency data:', agencyData);
       return agencyData;
     }
 
@@ -588,8 +580,6 @@ export class AuthService {
    * Handles registration errors from the backend
    */
   private handleRegistrationError(error: HttpErrorResponse): RegisterResponse {
-    console.error('Registration error details:', error);
-
     let errorMessage = 'Erreur lors de la création du compte';
     let errorDetails: string | { [key: string]: string[] } = errorMessage;
 
