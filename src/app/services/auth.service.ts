@@ -499,8 +499,7 @@ export class AuthService {
       return false;
     }
 
-    if (!userData.address || !userData.address.city || 
-        !userData.address.neighborhood || !userData.address.arrondissement) {
+    if (!userData.address || !userData.address.city) {
       return false;
     }
 

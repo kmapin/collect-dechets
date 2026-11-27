@@ -96,6 +96,8 @@ export class Register implements OnInit {
   isLoadingArrondissements = false;
   isLoadingSecteurs = false;
   isLoadingQuartiers = false;
+  territoryError = '';
+  private territoryRequestId = 0;
 
   // Error handling properties
   validationErrors: { [key: string]: string[] } = {};
@@ -175,6 +177,9 @@ export class Register implements OnInit {
         this.userData.address.neighborhood = this.agency.address.neighborhood;
         this.userData.address.city = this.agency.address.city;
         this.userData.address.postalCode = this.agency.address.postalCode;
+        if (this.cities.length && this.userData.address.city) {
+          this.chargerTerritoireVille(this.userData.address.city, true);
+        }
 
         this.userData.agencyName = this.agency.agencyName;
         this.userData.agencyDescription = this.agency.agencyDescription
@@ -469,35 +474,97 @@ export class Register implements OnInit {
   }
 
   onArrondissementChange(arrondissement?: string) {
+    const requestId = ++this.territoryRequestId;
     this.secteurss = [];
     this.quartierss = [];
     this.quartiers = [];
+    this.isLoadingSecteurs = false;
+    this.isLoadingQuartiers = false;
+    this.territoryError = '';
     this.userData.address.sector = '';
     this.userData.address.neighborhood = '';
     if (!arrondissement) return;
 
-    const sectorObj = this.arrondissementss.find(a => a.name === arrondissement);
-    if (!sectorObj?.id) return;
+    const arrondissementObj = this.arrondissementss.find(a => a.name === arrondissement);
+    if (!arrondissementObj?.id) return;
+    this.chargerSecteursArrondissement(arrondissementObj, requestId);
+  }
+
+  private chargerSecteursArrondissement(
+    arrondissement: Arrondissement,
+    requestId: number,
+    secteurEnregistre = '',
+    quartierEnregistre = '',
+  ): void {
     this.isLoadingSecteurs = true;
-    this.territoryService.getSectorsByArrondissement(sectorObj.id).subscribe({
-      next: (sectors) => { this.secteurss = sectors; this.isLoadingSecteurs = false; },
-      error: () => { this.secteurss = []; this.isLoadingSecteurs = false; },
+    this.territoryService.getSectorsByArrondissement(arrondissement.id).subscribe({
+      next: (sectors) => {
+        if (requestId !== this.territoryRequestId || this.userData.address.arrondissement !== arrondissement.name) return;
+        this.secteurss = sectors.filter(
+          (sector) => this.idArrondissementSecteur(sector) === arrondissement.id,
+        );
+        this.isLoadingSecteurs = false;
+        const secteur = this.secteurss.find((item) => item.name === secteurEnregistre);
+        if (secteur) {
+          this.userData.address.sector = secteur.name;
+          this.chargerQuartiersSecteur(secteur, requestId, quartierEnregistre);
+          return;
+        }
+        this.userData.address.sector = '';
+        this.userData.address.neighborhood = '';
+        if (!this.secteurss.length) {
+          this.chargerQuartiersDirectsArrondissement(arrondissement.id, requestId, quartierEnregistre);
+        }
+      },
+      error: () => {
+        if (requestId !== this.territoryRequestId) return;
+        this.secteurss = [];
+        this.quartierss = [];
+        this.isLoadingSecteurs = false;
+        this.userData.address.sector = '';
+        this.userData.address.neighborhood = '';
+        this.territoryError = 'Impossible de charger les secteurs de cette ville.';
+      },
     });
   }
 
   onSecteurChange(secteur: string) {
+    const requestId = ++this.territoryRequestId;
     this.quartierss = [];
     this.quartiers = [];
+    this.isLoadingQuartiers = false;
+    this.territoryError = '';
     this.userData.address.neighborhood = '';
     if (!secteur) return;
 
     const secteurObj = this.secteurss.find(s => s.name === secteur);
     if (!secteurObj?.id) return;
+    this.chargerQuartiersSecteur(secteurObj, requestId);
+  }
+
+  private chargerQuartiersSecteur(secteur: Sector, requestId: number, quartierEnregistre = ''): void {
     this.isLoadingQuartiers = true;
-    this.territoryService.getNeighborhoodsBySector(secteurObj.id).subscribe({
-      next: (quartiers) => { this.quartierss = quartiers; this.isLoadingQuartiers = false; },
-      error: () => { this.quartierss = []; this.isLoadingQuartiers = false; },
+    this.territoryService.getNeighborhoodsBySector(secteur.id).subscribe({
+      next: (quartiers) => {
+        if (requestId !== this.territoryRequestId || this.userData.address.sector !== secteur.name) return;
+        this.quartierss = quartiers.filter(
+          (quartier) => (quartier.sectorId || quartier.sector?.id) === secteur.id,
+        );
+        this.isLoadingQuartiers = false;
+        this.restaurerQuartier(quartierEnregistre);
+      },
+      error: () => {
+        if (requestId !== this.territoryRequestId) return;
+        this.quartierss = [];
+        this.isLoadingQuartiers = false;
+        this.userData.address.neighborhood = '';
+        this.territoryError = 'Impossible de charger les quartiers de ce secteur.';
+      },
     });
+  }
+
+  private restaurerQuartier(nom: string): void {
+    this.userData.address.neighborhood = this.quartierss.some((quartier) => quartier.name === nom) ? nom : '';
   }
 
   private getQuartierCoordinates(): { latitude?: number; longitude?: number } {
@@ -509,22 +576,168 @@ export class Register implements OnInit {
   }
 
   onCityChange(city: string) {
+    this.chargerTerritoireVille(city, false);
+  }
+
+  private chargerTerritoireVille(city: string, conserverSelection: boolean): void {
+    const requestId = ++this.territoryRequestId;
+    const arrondissementEnregistre = conserverSelection ? this.userData.address.arrondissement : '';
+    const secteurEnregistre = conserverSelection ? this.userData.address.sector : '';
+    const quartierEnregistre = conserverSelection ? this.userData.address.neighborhood : '';
     this.arrondissementss = [];
     this.secteurss = [];
     this.quartierss = [];
     this.secteurs = [];
     this.quartiers = [];
-    this.userData.address.arrondissement = '';
-    this.userData.address.sector = '';
-    this.userData.address.neighborhood = '';
+    this.territoryError = '';
+    this.userData.address.arrondissement = conserverSelection ? arrondissementEnregistre : '';
+    this.userData.address.sector = conserverSelection ? secteurEnregistre : '';
+    this.userData.address.neighborhood = conserverSelection ? quartierEnregistre : '';
+    this.isLoadingArrondissements = false;
+    this.isLoadingSecteurs = false;
+    this.isLoadingQuartiers = false;
     if (!city) return;
 
     const cityObj = this.cities.find(c => c.name === city);
-    if (!cityObj?.id) return;
+    if (!cityObj?.id) {
+      this.userData.address.arrondissement = '';
+      this.userData.address.sector = '';
+      this.userData.address.neighborhood = '';
+      if (city) this.territoryError = 'Cette ville n’est pas disponible dans le découpage territorial.';
+      return;
+    }
     this.isLoadingArrondissements = true;
     this.territoryService.getArrondissementsByCity(cityObj.id).subscribe({
-      next: (arr) => { this.arrondissementss = arr; this.isLoadingArrondissements = false; },
-      error: () => { this.arrondissementss = []; this.isLoadingArrondissements = false; },
+      next: (arrondissements) => {
+        if (requestId !== this.territoryRequestId || this.userData.address.city !== city) return;
+        this.arrondissementss = arrondissements.filter(
+          (item) => (item.cityId || item.city?.id) === cityObj.id,
+        );
+        this.quartiers = [];
+        this.quartierss = [];
+        this.isLoadingArrondissements = false;
+
+        if (this.arrondissementss.length) {
+          const arrondissement = this.arrondissementss.find((item) => item.name === arrondissementEnregistre);
+          if (arrondissement) {
+            this.userData.address.arrondissement = arrondissement.name;
+            this.chargerSecteursArrondissement(arrondissement, requestId, secteurEnregistre, quartierEnregistre);
+          } else {
+            this.userData.address.arrondissement = '';
+            this.userData.address.sector = '';
+            this.userData.address.neighborhood = '';
+          }
+          return;
+        }
+
+        this.userData.address.arrondissement = '';
+        this.chargerSecteursVille(cityObj.id, requestId, secteurEnregistre, quartierEnregistre);
+      },
+      error: () => {
+        if (requestId !== this.territoryRequestId) return;
+        this.arrondissementss = [];
+        this.secteurss = [];
+        this.quartierss = [];
+        this.isLoadingArrondissements = false;
+        this.userData.address.arrondissement = '';
+        this.userData.address.sector = '';
+        this.userData.address.neighborhood = '';
+        this.territoryError = 'Impossible de charger le découpage territorial de cette ville.';
+      },
+    });
+  }
+
+  private chargerSecteursVille(
+    cityId: string,
+    requestId: number,
+    secteurEnregistre = '',
+    quartierEnregistre = '',
+  ): void {
+    this.isLoadingSecteurs = true;
+    this.territoryService.getAllSectors().subscribe({
+      next: (sectors) => {
+        if (requestId !== this.territoryRequestId || this.userData.address.arrondissement) return;
+        this.secteurss = sectors.filter((sector) =>
+          !this.idArrondissementSecteur(sector) && this.idVilleSecteur(sector) === cityId,
+        );
+        this.isLoadingSecteurs = false;
+        const secteur = this.secteurss.find((item) => item.name === secteurEnregistre);
+        if (secteur) {
+          this.userData.address.sector = secteur.name;
+          this.chargerQuartiersSecteur(secteur, requestId, quartierEnregistre);
+          return;
+        }
+        this.userData.address.sector = '';
+        if (this.secteurss.length) {
+          this.userData.address.neighborhood = '';
+          this.quartierss = [];
+        } else {
+          this.chargerQuartiersDirectsVille(cityId, requestId, quartierEnregistre);
+        }
+      },
+      error: () => {
+        if (requestId !== this.territoryRequestId) return;
+        this.secteurss = [];
+        this.isLoadingSecteurs = false;
+        this.userData.address.sector = '';
+        this.userData.address.neighborhood = '';
+        this.territoryError = 'Impossible de charger les secteurs de cette ville.';
+        this.quartierss = [];
+      },
+    });
+  }
+
+  private idArrondissementSecteur(sector: Sector): string {
+    return sector.arrondissementId || sector.arrondissement?.id || '';
+  }
+
+  private idVilleSecteur(sector: Sector): string {
+    return sector.cityId || sector.arrondissement?.cityId || sector.arrondissement?.city?.id || '';
+  }
+
+  private chargerQuartiersDirectsVille(cityId: string, requestId: number, quartierEnregistre = ''): void {
+    this.isLoadingQuartiers = true;
+    this.territoryService.getAllNeighborhoods().subscribe({
+      next: (neighborhoods) => {
+        const cityName = this.cities.find((item) => item.id === cityId)?.name;
+        if (requestId !== this.territoryRequestId || this.userData.address.city !== cityName) return;
+        this.quartierss = neighborhoods.filter(
+          (quartier) => !quartier.sectorId && !quartier.arrondissementId && quartier.cityId === cityId,
+        );
+        this.isLoadingQuartiers = false;
+        this.restaurerQuartier(quartierEnregistre);
+      },
+      error: () => {
+        if (requestId !== this.territoryRequestId) return;
+        this.quartierss = [];
+        this.isLoadingQuartiers = false;
+        this.territoryError = 'Impossible de charger les quartiers de cette ville.';
+      },
+    });
+  }
+
+  private chargerQuartiersDirectsArrondissement(
+    arrondissementId: string,
+    requestId: number,
+    quartierEnregistre = '',
+  ): void {
+    this.isLoadingQuartiers = true;
+    this.territoryService.getAllNeighborhoods().subscribe({
+      next: (neighborhoods) => {
+        const arrondissementName = this.arrondissementss.find((item) => item.id === arrondissementId)?.name;
+        if (requestId !== this.territoryRequestId || this.userData.address.arrondissement !== arrondissementName) return;
+        this.quartierss = neighborhoods.filter(
+          (quartier) => !quartier.sectorId && quartier.arrondissementId === arrondissementId,
+        );
+        this.isLoadingQuartiers = false;
+        this.restaurerQuartier(quartierEnregistre);
+      },
+      error: () => {
+        if (requestId !== this.territoryRequestId) return;
+        this.quartierss = [];
+        this.isLoadingQuartiers = false;
+        this.territoryError = 'Impossible de charger les quartiers de cet arrondissement.';
+      },
     });
   }
   private validateForm(): boolean {
@@ -537,6 +750,41 @@ export class Register implements OnInit {
     // Champs communs obligatoires
     if (!this.userData.firstName || !this.userData.lastName || !this.userData.phone) {
       this.notificationService.showError('Erreur', 'Veuillez remplir tous les champs obligatoires');
+      return false;
+    }
+
+    if (!this.userData.address.city) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner une ville.');
+      return false;
+    }
+
+    if (!this.cities.some((city) => city.name === this.userData.address.city)) {
+      this.notificationService.showError('Erreur', 'La ville sélectionnée n’est plus disponible.');
+      return false;
+    }
+
+    if (this.territoryError) {
+      this.notificationService.showError('Erreur', 'Impossible de vérifier le découpage territorial. Veuillez réessayer.');
+      return false;
+    }
+
+    if (this.isLoadingArrondissements || this.isLoadingSecteurs || this.isLoadingQuartiers) {
+      this.notificationService.showError('Erreur', 'Veuillez attendre le chargement du découpage territorial.');
+      return false;
+    }
+
+    if (this.arrondissementss.length && !this.userData.address.arrondissement) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner un arrondissement.');
+      return false;
+    }
+
+    if (this.secteurss.length && !this.userData.address.sector) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner un secteur.');
+      return false;
+    }
+
+    if (this.quartierss.length && !this.userData.address.neighborhood) {
+      this.notificationService.showError('Erreur', 'Veuillez sélectionner un quartier.');
       return false;
     }
 
@@ -671,8 +919,18 @@ export class Register implements OnInit {
   getAllCountries() {
     this.isLoadingCities = true;
     this.territoryService.getAllCities().subscribe({
-      next: (cities) => { this.cities = cities; this.isLoadingCities = false; },
-      error: () => { this.cities = []; this.isLoadingCities = false; },
+      next: (cities) => {
+        this.cities = cities;
+        this.isLoadingCities = false;
+        if (this.userData.address.city) {
+          this.chargerTerritoireVille(this.userData.address.city, true);
+        }
+      },
+      error: () => {
+        this.cities = [];
+        this.isLoadingCities = false;
+        this.territoryError = 'Impossible de charger la liste des villes.';
+      },
     });
   }
 }

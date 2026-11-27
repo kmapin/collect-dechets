@@ -39,6 +39,7 @@ export class TerritorySelectComponent {
   @Input() value: string | number | null = null;
   @Input() placeholder = 'Rechercher…';
   @Input() disabled = false;
+  @Input() appearance: 'compact' | 'form' = 'compact';
   /** Libellé d'une option "toutes/tous" en tête de liste (barres de filtre) — absent
    * (undefined/null) pour un champ de formulaire où une sélection est requise. */
   @Input() allLabel: string | null = null;
@@ -78,6 +79,9 @@ export class TerritorySelectComponent {
   }
 
   clear(): void {
-    this.choose(null);
+    this.value = null;
+    this.search = '';
+    this.dropdownOpen = true;
+    this.valueChange.emit(null);
   }
 }

@@ -268,9 +268,13 @@
                           <app-territory-select
                             [options]="toTerritoryOptions(cities)"
                             [value]="userData.address.city"
+                            appearance="form"
                             placeholder="Sélectionner"
                             (valueChange)="userData.address.city = $any($event); clearError(); onCityChange($any($event))"
                             />
+                          @if (isLoadingCities) {
+                            <div class="form-error">Chargement des villes…</div>
+                          }
                         </div>
                         <div class="form-group">
                           <label class="form-label" for="postalCode">
@@ -290,46 +294,58 @@
                         </div>
 
                         <div class="form-row">
-                          <div class="form-group">
-                            <label class="form-label" for="arrondissement">
-                              <i class="material-icons">map</i>
-                              Arrondiss... <span class="required">*</span>
-                            </label>
-                            <app-territory-select
-                              [options]="toTerritoryOptions(arrondissementss)"
-                              [value]="userData.address.arrondissement"
-                              placeholder="Sélectionner"
-                              [disabled]="!arrondissementss.length"
-                              (valueChange)="userData.address.arrondissement = $any($event); clearError(); onArrondissementChange($any($event))"
-                              />
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label" for="sector">
-                              <i class="material-icons">location_city</i>
-                              Secteur <span class="required">*</span>
-                            </label>
-                            <app-territory-select
-                              [options]="toTerritoryOptions(secteurss)"
-                              [value]="userData.address.sector"
-                              placeholder="Sélectionner"
-                              [disabled]="!secteurss.length"
-                              (valueChange)="userData.address.sector = $any($event); clearError(); onSecteurChange($any($event))"
-                              />
-                          </div>
-                          <div class="form-group">
-                            <label class="form-label" for="neighborhood">
-                              <i class="material-icons">location_city</i>
-                              Quartier <span class="required">*</span>
-                            </label>
-                            <app-territory-select
-                              [options]="toTerritoryOptions(quartierss)"
-                              [value]="userData.address.neighborhood"
-                              placeholder="Sélectionner"
-                              [disabled]="!quartierss.length"
-                              (valueChange)="userData.address.neighborhood = $any($event); clearError()"
-                              />
-                          </div>
+                          @if (arrondissementss.length) {
+                            <div class="form-group">
+                              <label class="form-label" for="arrondissement">
+                                <i class="material-icons">map</i>
+                                Arrondissement <span class="required">*</span>
+                              </label>
+                              <app-territory-select
+                                [options]="toTerritoryOptions(arrondissementss)"
+                                [value]="userData.address.arrondissement"
+                                appearance="form"
+                                placeholder="Sélectionner"
+                                (valueChange)="userData.address.arrondissement = $any($event); clearError(); onArrondissementChange($any($event))"
+                                />
+                            </div>
+                          }
+                          @if (secteurss.length) {
+                            <div class="form-group">
+                              <label class="form-label" for="sector">
+                                <i class="material-icons">location_city</i>
+                                Secteur <span class="required">*</span>
+                              </label>
+                              <app-territory-select
+                                [options]="toTerritoryOptions(secteurss)"
+                                [value]="userData.address.sector"
+                                appearance="form"
+                                placeholder="Sélectionner"
+                                (valueChange)="userData.address.sector = $any($event); clearError(); onSecteurChange($any($event))"
+                                />
+                            </div>
+                          }
+                          @if (quartierss.length) {
+                            <div class="form-group">
+                              <label class="form-label" for="neighborhood">
+                                <i class="material-icons">location_city</i>
+                                Quartier <span class="required">*</span>
+                              </label>
+                              <app-territory-select
+                                [options]="toTerritoryOptions(quartierss)"
+                                [value]="userData.address.neighborhood"
+                                appearance="form"
+                                placeholder="Sélectionner"
+                                (valueChange)="userData.address.neighborhood = $any($event); clearError()"
+                                />
+                            </div>
+                          }
                         </div>
+                        @if (isLoadingArrondissements || isLoadingSecteurs || isLoadingQuartiers) {
+                          <div class="form-error">Chargement du découpage territorial…</div>
+                        }
+                        @if (territoryError) {
+                          <div class="form-error" role="alert">{{ territoryError }}</div>
+                        }
 
                         <div class="form-row">
                           <div class="form-group">
